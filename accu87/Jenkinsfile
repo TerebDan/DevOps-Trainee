@@ -1,25 +1,58 @@
 pipeline {
-    agent any
-    stages {
-        stage('Build') {
-            steps {
+    	agent any
+    	stages {
+        	stage('Build') {
+            		steps {
 
-		git branch: 'accu81', url: 'https://github.com/TerebDan/DevOps-Trainee.git'
-                     // Run SH.script.
-            }
+			git branch: 'accu81', url: 'https://github.com/TerebDan/DevOps-Trainee.git'
+                     	sh 'cd /var/jenkins_home/workspace/DevOps-Trainee_accu87'
+			sh 'git checkout -b staging'
+			sh 'git merge accu81'
+			sh '/var/jenkins_home/workspace/DevOps-Trainee_accu87/accu81/dns-changer.sh'
+            		}
 
-            post {
+            		post {
+                		success {
+					sh 'echo "Build: all fine"'
+                		}
+            		}
+        	}
 
-                success {
-			sh 'echo "all fine"'
-                }
-            }
-        }
-        stage('Results') {
-            steps {
-                      sh 'echo "results"'
-            }
-       }
-    }
+		stage('Test') {
+            		steps {
+				script {
+					def remote_ip="$(dig @adelaide.ns.cloudflare.com vm20.admon.com +short)"
+					def host_ip="$(hostname -I | grep -o '^[^ ]*')"				
+					
+					if ($remote_ip == $host_ip){
+						currentStage.result =  'SUCCESS'
+					}
+					else {
+						currentStage.result =  'FAILURE'
+					}		
+				}
+            		}
+
+			post {
+                		success {
+					sh 'git commit -m "Verified by CI/CD Jenkins"'
+                        		sh 'echo "Test: all fine"'
+                		}
+				
+				failure {
+					#send message
+					mail to: 'terebdan@gmail.com',
+             					subject: "Failed Pipeline",
+             					body: "Something is wrong"
+					error "test failed"
+				}
+            		}
+        	}
+	
+        	stage('Release') {
+            		steps {
+                      		sh 'echo "Release: all fine"'
+            		}
+        	}
+    	}
 } 
-
