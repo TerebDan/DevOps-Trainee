@@ -1,0 +1,25 @@
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+
+		git branch: 'accu81', url: 'https://github.com/TerebDan/DevOps-Trainee.git'
+                     // Run SH.script.
+            }
+
+            post {
+
+                success {
+			sh 'echo "all fine"'
+                }
+            }
+        }
+        stage('Results') {
+            steps {
+                      sh 'echo "results"'
+            }
+       }
+    }
+} 
+
