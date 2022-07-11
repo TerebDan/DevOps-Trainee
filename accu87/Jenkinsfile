@@ -52,7 +52,7 @@ pipeline {
     						script: 'hostname -I',
     						returnStdout: true
   						).trim()			
-					host_ip = "8.8.8.8"
+					
 					if (remote_ip != host_ip){
 						error "test failed"
 					}		
