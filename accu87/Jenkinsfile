@@ -28,7 +28,7 @@ pipeline {
 			}
 			sh 'git checkout -b staging'
 			sh 'git merge accu81'
-			sh '/var/jenkins_home/workspace/DevOps-Trainee_accu87/accu81/dns-changer.sh'
+			sh '/var/jenkins_home/workspace/DevOps-Trainee_accu87/accu81/dns-changer.sh testDan'
             		}
 
             		post {
