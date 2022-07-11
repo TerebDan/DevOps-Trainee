@@ -73,7 +73,7 @@ pipeline {
                 		}
 				
 				failure {
-					sh "curl \"https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_ID}&text=JOB: ${env.BUILD_ID} Fail\""
+					sh "curl \"https://api.telegram.org/bot${TG_TOKEN}/sendMessage?chat_id=${TG_ID}&text=JOB: ${env.JOB_NAME} Fail\""
 				}
             		}
         	}
