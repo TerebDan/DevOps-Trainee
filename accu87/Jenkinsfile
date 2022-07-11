@@ -62,13 +62,6 @@ pipeline {
 			post {
                 		success {
 					sh 'git commit --allow-empty -m "Verified by CI/CD Jenkins"'
-					script {
-  						try {
-      							sh 'git branch -D :staging'
-  						} catch (Exception e) {
-      							echo 'branch does not exist'
-  						}
-					}
         				withCredentials([sshUserPrivateKey(credentialsId: 'ssh_key_jenkins', keyFileVariable: 'SSH_KEY')]) {
     						sh 'echo ssh -i $SSH_KEY -l git -o StrictHostKeyChecking=no \\"\\$@\\" > local_ssh.sh'
     						sh 'chmod +x local_ssh.sh'
