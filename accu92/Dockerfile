@@ -3,8 +3,7 @@ LABEL stage=intermediate
 
 # Install dependencies required to git clone.
 RUN apk update && \
-    apk add --update git && \
-    apk add --update openssh
+    apk add --update git
 
 RUN git clone https://github.com/TerebDan/DevOps-Trainee.git gitTemp
 
@@ -20,7 +19,7 @@ RUN echo "deb [arch=$(dpkg --print-architecture) \
 RUN apt-get update && apt-get install -y docker-ce-cli \
     jq \
     dnsutils
-RUN mkdir -p /var/jenkins_home/jobs/
-COPY --from=intermediate /gitTemp/accu87 /var/jenkins_home/jobs/accu87
+RUN mkdir -p /var/code_examples/jobs/
+COPY --from=intermediate /gitTemp/accu87 /var/code_examples/jobs//accu87
 USER jenkins
 RUN jenkins-plugin-cli --plugins "blueocean:1.25.5 docker-workflow:1.28"
