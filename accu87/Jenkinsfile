@@ -6,7 +6,7 @@ pipeline {
         TG_TOKEN = credentials('tg_notofocations_token')
         TG_ID = credentials('tg_notifications_id')
     }
-    stages {
+    stages {    
         stage('Build') {
             steps {
                 git branch: 'master', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
@@ -52,6 +52,7 @@ pipeline {
                         error "test failed"
                     }
                 }
+            }
 
             post {
                 success {
@@ -71,5 +72,5 @@ pipeline {
                 }
             }
         }
-    }
-} 
+    } 
+}
