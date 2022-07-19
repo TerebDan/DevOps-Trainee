@@ -10,7 +10,7 @@ pipeline {
         stage('Build') {
             steps {
                 git branch: 'master', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
-                sh 'cd /var/jenkins_home/workspace/DevOps-Trainee_accu87'
+                sh 'cd /var/jenkins_home/workspace/DevOps-Trainee'
                 sh 'git config --global user.email "${MAIL}"'
                 sh 'git config --global user.name "${USER}"'
                 script {
