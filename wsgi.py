@@ -29,7 +29,7 @@ framework.
 """
 import os
 import sys
-path = '/home/dan/django-app'
+path = '/home/dan/django_app'
 sys.path.append(path)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
