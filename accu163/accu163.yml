@@ -4,8 +4,8 @@
   become: yes
 
   roles:
-    - role: APP
-  tags: APP
+    - role: APP_django
+  tags: APP_django
 
 - name: Config load balancer
   hosts: LB_servers

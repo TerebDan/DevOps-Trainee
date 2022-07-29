@@ -11,13 +11,16 @@
       state: latest
       update_cache: true
 
-- name: Open http port
-  ansible.builtin.shell: firewall-cmd --zone=public --permanent --add-service=http
-  register: firewall
+- name: permit traffic in default zone for http service
+  ansible.posix.firewalld:
+    service: http
+    permanent: yes
+    state: enabled
 
-- name: Reload firewall
-  ansible.builtin.shell: firewall-cmd --reload
-  when: firewall.changed
+- name: reload service firewalld
+  systemd:
+    name: firewalld
+    state: reloaded
 
 - name: Remove nginx.conf
   ansible.builtin.file:
