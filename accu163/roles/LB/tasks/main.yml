@@ -25,7 +25,7 @@
       state: absent
   register: delete
 
-- name: Another symbolic mode example, adding some permissions and removing others
+- name: copy new nginx.conf file
   ansible.builtin.copy:
       src: nginx.conf
       dest: /etc/nginx
