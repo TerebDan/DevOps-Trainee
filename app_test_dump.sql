@@ -23,3 +23,7 @@ LOCK TABLES `app_test` WRITE;
 INSERT INTO `app_test` VALUES (1,'app_test1','I am in the db'),(2,'app_test2','I am in the db'),(3,'app_test3','I am in the db');
 /*!40000 ALTER TABLE `app_test` ENABLE KEYS */;
 UNLOCK TABLES;
+
+CREATE USER 'admin'@'localhost' IDENTIFIED BY '1234';
+GRANT ALL PRIVILEGES ON myapp.* TO 'admin'@'localhost';
+FLUSH PRIVILEGES;
