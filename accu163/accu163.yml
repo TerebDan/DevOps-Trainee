@@ -1,0 +1,24 @@
+---
+- name: Deploy app
+  hosts: APP_servers
+  become: yes
+
+  roles:
+    - role: APP
+  tags: APP
+
+- name: Config load balancer
+  hosts: LB_servers
+  become: yes
+
+  roles:
+    - role: LB
+  tags: LB
+
+- name: Config DB
+  hosts: DB_servers
+  become: yes
+
+  roles:
+    - role: DB
+  tags: DB
