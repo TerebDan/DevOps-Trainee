@@ -1,8 +1,8 @@
 [DB_servers]
-Ubuntu22 ansible_host=192.168.0.140
+Ubuntu22_1 ansible_host=192.168.0.140
 
 [APP_servers]
-Ubuntu20 ansible_host=192.168.0.141
+Ubuntu22_2 ansible_host=192.168.0.141
 
 [LB_servers]
 Centos1 ansible_host=192.168.0.136

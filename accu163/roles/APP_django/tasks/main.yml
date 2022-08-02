@@ -1,2 +1,41 @@
 ---
-# tasks file for APP_django
+- name: Install requirements
+  ansible.builtin.apt:
+    update_cache: yes
+    pkg:
+    - git 
+    - python2-minimal 
+    - curl 
+    - virtualenv 
+    - python2-dev 
+    - libmysqlclient-dev 
+    - gcc
+
+- name: Download pip
+  ansible.builtin.get_url:
+    url: https://bootstrap.pypa.io/pip/2.7/get-pip.py
+    dest: /home/dan/get-pip.py
+
+- name: Install pip
+  ansible.builtin.shell: python2 get-pip.py
+
+- name: Remove get-pip.py
+  ansible.builtin.file:
+    path: /home/dan/get-pip.py
+    state: absent
+
+- name: Clone app
+  ansible.builtin.git:
+    repo: https://github.com/TerebDan/DevOps-Trainee.git
+    dest: /home/dan/django_app
+    version: accu154
+
+- name: Create Python virtual env and install packages inside the virtual env
+  pip:
+    name: 
+    - django==1.4 
+    - mysqlclient
+    virtualenv: /home/dan/venv
+    virtualenv_command: virtualenv
+    virtualenv_site_packages: no
+    virtualenv_python: python2
