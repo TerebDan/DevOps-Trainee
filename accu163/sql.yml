@@ -1,5 +1,0 @@
----
-- hosts: DB_servers 
-  become: yes
-  roles:
-    - role: DB

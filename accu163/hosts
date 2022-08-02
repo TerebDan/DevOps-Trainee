@@ -2,7 +2,7 @@
 Ubuntu22 ansible_host=192.168.0.140
 
 [APP_servers]
-Ubuntu20 ansible_host=192.168.0.137
+Ubuntu20 ansible_host=192.168.0.141
 
 [LB_servers]
 Centos1 ansible_host=192.168.0.136

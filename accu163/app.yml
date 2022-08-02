@@ -22,10 +22,6 @@
     name: firewalld
     state: reloaded
 
-- name: Disable SELinux
-  ansible.posix.selinux:
-    state: disabled      
-
 - name: Remove nginx.conf
   ansible.builtin.file:
       path: /etc/nginx/nginx.conf
