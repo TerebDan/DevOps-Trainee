@@ -11,18 +11,26 @@
     - libmysqlclient-dev 
     - gcc
 
-- name: Download pip
-  ansible.builtin.get_url:
-    url: https://bootstrap.pypa.io/pip/2.7/get-pip.py
-    dest: /home/dan/get-pip.py
+- name: Checking pip installed
+  stat:
+    path: /usr/bin/pip
+  register: result
 
 - name: Install pip
-  ansible.builtin.shell: python2 get-pip.py
+  block:
+    - name: Download pip
+      ansible.builtin.get_url:
+        url: https://bootstrap.pypa.io/pip/2.7/get-pip.py
+        dest: /home/dan/get-pip.py
 
-- name: Remove get-pip.py
-  ansible.builtin.file:
-    path: /home/dan/get-pip.py
-    state: absent
+    - name: Install pip
+      ansible.builtin.shell: python2 get-pip.py
+
+    - name: Remove get-pip.py
+      ansible.builtin.file:
+        path: /home/dan/get-pip.py
+        state: absent
+  when: not result.stat.exists
 
 - name: Clone app
   ansible.builtin.git:
@@ -39,3 +47,6 @@
     virtualenv_command: virtualenv
     virtualenv_site_packages: no
     virtualenv_python: python2
+
+- name: Start app
+  ansible.builtin.shell: . /home/dan/venv/bin/activate && python /home/dan/django_app/manage.py runserver 0.0.0.0:8000 &>/dev/null & 
