@@ -32,27 +32,55 @@ pipeline {
 
                     post {
                         success {
-                            sh 'echo "Test: all fine"'
+                            sh 'echo "Setup test: all fine"'
                         }
         
                         failure {
-                            sh 'echo "Test: error"'
+                            sh 'echo "Setup test: error"'
                         }
                     }
                 }
         
                 stage('Test the application') {
                     steps {
-                        sh 'echo "Application test"'
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136 \
+                                -o /dev/null", returnStdout: true).trim()
+                                
+                            if (status != "200") {
+                                error("index.html error")
+                            }
+                            
+                            status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/dbread \
+                                -o /dev/null", returnStdout: true).trim()
+                                
+                            if (status != "200") {
+                                error("dbread error")
+                            }
+                            
+                            status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/appserver \
+                                -o /dev/null", returnStdout: true).trim()
+                                
+                            if (status != "200") {
+                                error("appserver error")
+                            }
+                            
+                            status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/serverid \
+                                -o /dev/null", returnStdout: true).trim()
+                                
+                            if (status != "200") {
+                                error("serverid error")
+                            }
+                        }
                     }
         
                     post {
                         success {
-                            sh 'echo "Test: all fine"'
+                            sh 'echo "Application test: all fine"'
                         }
         
                         failure {
-                            sh 'echo "Test: error"'
+                            sh 'echo "echo "Application test: error"'
                         }
                     }
                 }
@@ -60,4 +88,3 @@ pipeline {
         }
     }
 }
-
