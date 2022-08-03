@@ -7,17 +7,11 @@
   apt: update_cache=yes
   changed_when: False
   when: not mysql_installed.stat.exists
-  
-- ansible.builtin.wait_for:
-    timeout: 10
 
 - name: Ensure MySQL Python libraries are installed.
   apt:
     name: "{{ mysql_python_package_debian }}"
     state: present
-    
-- ansible.builtin.wait_for:
-    timeout: 10
 
 - name: Ensure MySQL packages are installed.
   apt:
