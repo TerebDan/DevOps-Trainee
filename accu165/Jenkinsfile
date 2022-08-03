@@ -7,11 +7,10 @@ pipeline {
         stage('Build') {
             steps {
                 git branch: 'accu163', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
-                sh 'ansible-playbook -i /var/jenkins_home/workspace/pipeline/accu163/hosts \
-                /var/jenkins_home/workspace/pipeline/accu163/accu163.yml \
-                --extra-vars "ansible_sudo_pass=${SUDO_PASS}"'            
+                dir('accu163') {
+                    sh 'ansible-playbook accu163.yml --extra-vars "ansible_sudo_pass=${SUDO_PASS}" --skip-tags all'
+                }
             }
-            
 
             post {
                 success {
@@ -22,19 +21,40 @@ pipeline {
                 }
             }
         }
+        
+        stage('Run Tests') {
+            parallel {
+                
+                stage('Test the setup') {
+                    steps {
+                        sh 'echo "Setup test"'
+                    }
 
-        stage('Test') {
-            steps {
-                sh 'echo "Test"'
-            }
-
-            post {
-                success {
-                    sh 'echo "Test: all fine"'
+                    post {
+                        success {
+                            sh 'echo "Test: all fine"'
+                        }
+        
+                        failure {
+                            sh 'echo "Test: error"'
+                        }
+                    }
                 }
-
-                failure {
-                    sh 'echo "Test: error"'
+        
+                stage('Test the application') {
+                    steps {
+                        sh 'echo "Application test"'
+                    }
+        
+                    post {
+                        success {
+                            sh 'echo "Test: all fine"'
+                        }
+        
+                        failure {
+                            sh 'echo "Test: error"'
+                        }
+                    }
                 }
             }
         }
