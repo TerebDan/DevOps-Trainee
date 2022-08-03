@@ -1,4 +1,4 @@
 FROM myjenkins
 USER root
-RUN apt-get install -y lsb-release git ansible
+RUN apt-get install -y git ansible vim sshpass
 

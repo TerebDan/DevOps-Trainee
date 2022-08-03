@@ -1,16 +1,15 @@
 pipeline {
     agent any
     environment {
-        MAIL = credentials('mail')
-        USER = credentials('user_name')
-        TG_TOKEN = credentials('tg_notofocations_token')
-        TG_ID = credentials('tg_notifications_id')
+        SUDO_PASS = credentials('sudo_pass')
     }
-    stages {    
+    stages {
         stage('Build') {
             steps {
-                git branch: 'master', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
-                sh 'cd /var/jenkins_home/workspace/DevOps-Trainee_master'
+                git branch: 'accu163', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
+                sh 'ansible-playbook -i /var/jenkins_home/workspace/pipeline/accu163/hosts \
+                /var/jenkins_home/workspace/pipeline/accu163/accu163.yml \
+                --extra-vars "ansible_sudo_pass=${SUDO_PASS}"'            
             }
 
             post {
@@ -25,21 +24,8 @@ pipeline {
 
         stage('Test') {
             steps {
-                script {
-                    remote_ip = sh (
-                        script: 'dig @adelaide.ns.cloudflare.com vm20.admon.com +short',
-                        returnStdout: true
-                    ).trim()
-
-                    host_ip = sh (
-                        script: 'hostname -I',
-                        returnStdout: true
-                    ).trim()
-
-                    if (remote_ip != host_ip){
-                        error "test failed"
-                    }
-                }
+                sh 'rm -rf /var/jenkins_home/workspace/pipeline'
+                sh 'echo "Test"'
             }
 
             post {
