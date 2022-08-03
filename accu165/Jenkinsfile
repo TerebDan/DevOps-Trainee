@@ -11,6 +11,7 @@ pipeline {
                 /var/jenkins_home/workspace/pipeline/accu163/accu163.yml \
                 --extra-vars "ansible_sudo_pass=${SUDO_PASS}"'            
             }
+            
 
             post {
                 success {
@@ -24,7 +25,6 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'rm -rf /var/jenkins_home/workspace/pipeline'
                 sh 'echo "Test"'
             }
 
@@ -38,5 +38,6 @@ pipeline {
                 }
             }
         }
-    } 
+    }
 }
+
