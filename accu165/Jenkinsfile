@@ -22,44 +22,39 @@ pipeline {
             }
         }
         
-        stage('Run Tests') {
+        stage('Test the setup') {
             parallel {
                 
-                stage('Test the setup') {
+                stage('Test LB server') {
                     steps {
                         script {
-                            try {
-                                sh(script: "nmap 192.168.0.136 -p 80 | grep -o open", returnStdout: true)
-                            } catch (Exception e) {
-                                error("LB error")
-                            }
-                            
-                            try {
-                                sh(script: "nmap 192.168.0.140 -p 3306 | grep -o open", returnStdout: true)
-                            } catch (Exception e) {
-                                error("DB error")
-                            }
-                            
-                            try {
-                                sh(script: "nmap 192.168.0.141 -p 8000 | grep -o open", returnStdout: true)
-                            } catch (Exception e) {
-                                error("APP error")
-                            }
-                        }
-                    }
-
-                    post {
-                        success {
-                            sh 'echo "Setup test: all fine"'
-                        }
-        
-                        failure {
-                            sh 'echo "Setup test: error"'
+                            sh(script: "nmap 192.168.0.136 -p 80 | grep -o open", returnStdout: true)
                         }
                     }
                 }
-        
-                stage('Test the application') {
+
+                stage('Test DB server') {
+                    steps {
+                        script {
+                            sh(script: "nmap 192.168.0.140 -p 3306 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+
+                stage('Test APP server') {
+                    steps {
+                        script {
+                            sh(script: "nmap 192.168.0.141 -p 8000 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test the application') {
+            parallel {
+
+                stage('Test index.html') {
                     steps {
                         script {
                             string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136 \
@@ -68,37 +63,45 @@ pipeline {
                             if (status != "200") {
                                 error("index.html error")
                             }
-                            
-                            status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/dbread \
+                        }
+                    }
+                }
+
+                stage('Test dbread') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/dbread \
                                 -o /dev/null", returnStdout: true).trim()
                                 
                             if (status != "200") {
                                 error("dbread error")
                             }
-                            
-                            status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/appserver \
+                        }
+                    }
+                }
+
+                stage('Test appserver') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/appserver \
                                 -o /dev/null", returnStdout: true).trim()
                                 
                             if (status != "200") {
                                 error("appserver error")
                             }
-                            
-                            status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/serverid \
+                        }
+                    }
+                }
+
+                stage('Test serverid') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/serverid \
                                 -o /dev/null", returnStdout: true).trim()
                                 
                             if (status != "200") {
                                 error("serverid error")
                             }
-                        }
-                    }
-        
-                    post {
-                        success {
-                            sh 'echo "Application test: all fine"'
-                        }
-        
-                        failure {
-                            sh 'echo "Application test: error"'
                         }
                     }
                 }
