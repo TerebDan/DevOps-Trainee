@@ -8,7 +8,7 @@ pipeline {
             steps {
                 git branch: 'accu163', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
                 dir('accu163') {
-                    sh 'ansible-playbook accu163.yml --extra-vars "ansible_sudo_pass=${SUDO_PASS}" --skip-tags all'
+                    sh 'ansible-playbook accu163.yml --extra-vars "ansible_sudo_pass=${SUDO_PASS}"'
                 }
             }
 
