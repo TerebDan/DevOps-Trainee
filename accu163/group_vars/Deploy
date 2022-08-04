@@ -1,3 +1,0 @@
----
-ansible_user                    : dan
-ansible_ssh_pass                : 1234
