@@ -38,6 +38,11 @@
     dest: /home/dan/django_app
     version: accu154
 
+- name: generate settings.py file
+  ansible.builtin.template:
+      src: settings.py.j2
+      dest: /home/dan/django_app/settings.py
+
 - name: Create Python virtual env and install packages inside the virtual env
   pip:
     name: 

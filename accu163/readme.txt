@@ -9,5 +9,5 @@ mysql_root_password=
 new_mysql_db_name=
 new_mysql_user_name=
 new_mysql_user_pass=
-
-django_app_ip_port= (default 192.168.0.141:8000)
+db_server_ip=
+django_app_ip_port= 
