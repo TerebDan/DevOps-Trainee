@@ -1,0 +1,158 @@
+pipeline {
+    agent any
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('aws_key_id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws_secret_key_id')
+        AWS_REGION = credentials('aws_region')
+        MYSQL_ROOT_PASS = credentials('mysql_root_password')
+        MYSQL_DB_NAME = credentials('new_mysql_db_name')
+        MYSQL_USER_NAME = credentials('new_mysql_user_name')
+        MYSQL_USER_PASS = credentials('new_mysql_user_pass')
+        SSH_KEY_PATH = credentials('ssh_key')
+    }
+    stages {
+        stage('Terraform apply') {
+            steps {
+                git branch: 'accu172', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
+                dir('accu172') {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Terraform apply: all fine"'
+                }
+                failure {
+                    sh 'echo "Terraform apply: fail"'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'git checkout accu163'
+                dir('accu163') {
+                    sh 'echo "\n[Deploy:vars]\nansible_ssh_private_key_file :${SSH_KEY_PATH}" >> hosts'
+                    sh 'ansible-playbook accu163.yml --extra-vars "django_app_ip_port=${}:8000 \
+                        db_server_ip=${} mysql_root_password=${MYSQL_ROOT_PASS} new_mysql_db_name=${MYSQL_DB_NAME} \
+                        new_mysql_user_name=${MYSQL_USER_NAME} new_mysql_user_pass=${MYSQL_USER_PASS}"'
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Build: all fine"'
+                }
+                failure {
+                    sh 'echo "Build: fail"'
+                }
+            }
+        }
+        
+        stage('Test the setup') {
+            parallel {
+                
+                stage('Test LB server') {
+                    steps {
+                        script {
+                            sh(script: "nmap 192.168.0.136 -p 80 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+
+                stage('Test DB server') {
+                    steps {
+                        script {
+                            sh(script: "nmap 192.168.0.140 -p 3306 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+
+                stage('Test APP server') {
+                    steps {
+                        script {
+                            sh(script: "nmap 192.168.0.141 -p 8000 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test the application') {
+            parallel {
+
+                stage('Test index.html') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136 \
+                                -o /dev/null", returnStdout: true).trim()
+                                
+                            if (status != "200") {
+                                error("index.html error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test dbread') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/dbread \
+                                -o /dev/null", returnStdout: true).trim()
+                                
+                            if (status != "200") {
+                                error("dbread error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test appserver') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/appserver \
+                                -o /dev/null", returnStdout: true).trim()
+                                
+                            if (status != "200") {
+                                error("appserver error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test serverid') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://192.168.0.136/serverid \
+                                -o /dev/null", returnStdout: true).trim()
+                                
+                            if (status != "200") {
+                                error("serverid error")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Terraform destroy') {
+            steps {
+                sh 'git checkout accu172'
+                dir('accu172') {
+                    sh 'terraform destroy'
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Terraform destroy: all fine"'
+                }
+                failure {
+                    sh 'echo "Terraform destroy: fail"'
+                }
+            }
+        }
+    }
+}
