@@ -41,7 +41,7 @@ pipeline {
                     string DB_IP = sh(returnStdout: true, script: "terraform output db_server_ip").trim()
                     string DB_DNS_NAME = sh(returnStdout: true, script: "terraform output db_server_dns_name").trim()
                     string APP_IP = sh(returnStdout: true, script: "terraform output app_server_ip").trim()
-					string APP_DNS_NAME = sh(returnStdout: true, script: "terraform output app_server_dns_name").trim()
+		    string APP_DNS_NAME = sh(returnStdout: true, script: "terraform output app_server_dns_name").trim()
                 }
             }
 
