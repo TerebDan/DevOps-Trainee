@@ -21,37 +21,37 @@
     - name: Download pip
       ansible.builtin.get_url:
         url: https://bootstrap.pypa.io/pip/2.7/get-pip.py
-        dest: /home/dan/get-pip.py
+        dest: /home/ubuntu/get-pip.py
 
     - name: Install pip
       ansible.builtin.shell: python2 get-pip.py
 
     - name: Remove get-pip.py
       ansible.builtin.file:
-        path: /home/dan/get-pip.py
+        path: /home/ubuntu/get-pip.py
         state: absent
   when: not result.stat.exists
 
 - name: Clone app
   ansible.builtin.git:
     repo: https://github.com/TerebDan/DevOps-Trainee.git
-    dest: /home/dan/django_app
+    dest: /home/ubuntu/django_app
     version: accu154
 
 - name: generate settings.py file
   ansible.builtin.template:
       src: settings.py.j2
-      dest: /home/dan/django_app/settings.py
+      dest: /home/ubuntu/django_app/settings.py
 
 - name: Create Python virtual env and install packages inside the virtual env
   pip:
     name: 
     - django==1.4 
     - mysqlclient
-    virtualenv: /home/dan/venv
+    virtualenv: /home/ubuntu/venv
     virtualenv_command: virtualenv
     virtualenv_site_packages: no
     virtualenv_python: python2
 
 - name: Start app
-  ansible.builtin.shell: . /home/dan/venv/bin/activate && python /home/dan/django_app/manage.py runserver 0.0.0.0:8000 &>/dev/null & 
+  ansible.builtin.shell: . /home/ubuntu/venv/bin/activate && python /home/ubuntu/django_app/manage.py runserver 0.0.0.0:8000 &>/dev/null & 
