@@ -37,6 +37,7 @@
     repo: https://github.com/TerebDan/DevOps-Trainee.git
     dest: /home/ubuntu/django_app
     version: accu154
+    force: yes
 
 - name: generate settings.py file
   ansible.builtin.template:
