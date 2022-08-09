@@ -2,21 +2,6 @@
 - name: Install nginx
   shell: sudo amazon-linux-extras install nginx1 -y
 
-- name: permit traffic in default zone for http service
-  ansible.posix.firewalld:
-    service: http
-    permanent: yes
-    state: enabled
-
-- name: reload service firewalld
-  systemd:
-    name: firewalld
-    state: reloaded
-
-- name: Disable SELinux
-  ansible.posix.selinux:
-    state: disabled      
-
 - name: generate nginx.conf file
   ansible.builtin.template:
       src: nginx.conf.j2
