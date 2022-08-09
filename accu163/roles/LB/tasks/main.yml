@@ -1,6 +1,6 @@
 ---
 - name: Install nginx
-  shell: sudo amazon-linux-extras install nginx1
+  shell: sudo amazon-linux-extras install nginx1 -y
 
 - name: permit traffic in default zone for http service
   ansible.posix.firewalld:
