@@ -91,6 +91,15 @@ pipeline {
                     }
                 }
             }
+            
+            post {
+                failure {
+                    sh 'echo "Terraform destroy"'
+                    dir('temp') {
+                        sh 'terraform destroy -auto-approve'
+                    }
+                }
+            }
         }
 
         stage('Test the application') {
@@ -101,7 +110,7 @@ pipeline {
                         script {
                             string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME} \
                                 -o /dev/null", returnStdout: true).trim()
-                                
+                                    
                             if (status != "200") {
                                 error("index.html error")
                             }
@@ -114,7 +123,7 @@ pipeline {
                         script {
                             string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/dbread \
                                 -o /dev/null", returnStdout: true).trim()
-                                
+                                    
                             if (status != "200") {
                                 error("dbread error")
                             }
@@ -127,7 +136,7 @@ pipeline {
                         script {
                             string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/appserver \
                                 -o /dev/null", returnStdout: true).trim()
-                                
+                                    
                             if (status != "200") {
                                 error("appserver error")
                             }
@@ -138,13 +147,26 @@ pipeline {
                 stage('Test serverid') {
                     steps {
                         script {
-                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/serverid \
-                                -o /dev/null", returnStdout: true).trim()
-                                
-                            if (status != "200") {
-                                error("serverid error")
+                            try {
+                                string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/serverid \
+                                    -o /dev/null", returnStdout: true).trim()
+                                        
+                                if (status != "200") {
+                                    error("serverid error")
+                                }
+                            } catch (Exception e) {
+                                echo 'Serverid fail'
                             }
                         }
+                    }
+                }
+            }
+            
+            post {
+                failure {
+                    sh 'echo "Terraform destroy"'
+                    dir('temp') {
+                        sh 'terraform destroy -auto-approve'
                     }
                 }
             }
@@ -152,9 +174,8 @@ pipeline {
 
         stage('Terraform destroy') {
             steps {
-                sh 'git checkout accu172'
                 dir('temp') {
-                    sh 'terraform destroy'
+                    sh 'terraform destroy -auto-approve'
                 }
             }
 
