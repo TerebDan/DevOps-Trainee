@@ -2,7 +2,7 @@
 - name: copy sql dump file
   ansible.builtin.copy:
     src: table.sql
-    dest: /home/dan
+    dest: /home/ubuntu
 
 - name: Ensure MySQL databases are present.
   mysql_db:
@@ -10,4 +10,4 @@
     collation: latin1_general_ci
     encoding: latin1
     state: import
-    target: /home/dan/table.sql
+    target: /home/ubuntu/table.sql
