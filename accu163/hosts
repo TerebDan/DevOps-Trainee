@@ -1,13 +1,1 @@
-[DB_servers]
-Ubuntu22_1 ansible_host=192.168.0.140
 
-[APP_servers]
-Ubuntu22_2 ansible_host=192.168.0.141
-
-[LB_servers]
-Centos1 ansible_host=192.168.0.136
-
-[Deploy:children]
-DB_servers
-APP_servers
-LB_servers
