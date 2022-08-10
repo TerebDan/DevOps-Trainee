@@ -30,7 +30,7 @@ pipeline {
                         SKIP_TAG = "APP_django"
                     }
                 }
-                git branch: 'accu172', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
+                git branch: 'master', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
                 sh 'mkdir -p temp'
                 sh 'cp -u accu172/instances.tf temp'
                 dir('temp') {
@@ -57,7 +57,6 @@ pipeline {
         
         stage('Build') {
             steps {
-                sh 'git checkout accu163'
                 dir('accu163') {
                     sh "echo \"[DB_servers]\n${DB_DNS_NAME} ansible_user=ubuntu\n\n \
                         [APP_servers]\n${APP_DNS_NAME} ansible_user=ubuntu\n\n \
