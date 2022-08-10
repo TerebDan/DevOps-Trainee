@@ -68,7 +68,6 @@ resource "aws_security_group" "db_rules" {
   ingress {
     from_port        = 3306
     to_port          = 3306
-    security_groups = [ aws_security_group.app_rules.name ]
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
   }
@@ -98,7 +97,6 @@ resource "aws_security_group" "app_rules" {
   ingress {
     from_port        = 8000
     to_port          = 8000
-    security_groups = [ aws_security_group.lb_rules.name ]
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
   }
