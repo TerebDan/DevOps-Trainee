@@ -1,0 +1,58 @@
+---
+- name: Install requirements
+  ansible.builtin.apt:
+    update_cache: yes
+    pkg:
+    - git 
+    - python2-minimal 
+    - curl 
+    - virtualenv 
+    - python2-dev 
+    - libmysqlclient-dev 
+    - gcc
+
+- name: Checking pip installed
+  stat:
+    path: /usr/bin/pip
+  register: result
+
+- name: Install pip
+  block:
+    - name: Download pip
+      ansible.builtin.get_url:
+        url: https://bootstrap.pypa.io/pip/2.7/get-pip.py
+        dest: /home/ubuntu/get-pip.py
+
+    - name: Install pip
+      ansible.builtin.shell: python2 get-pip.py
+
+    - name: Remove get-pip.py
+      ansible.builtin.file:
+        path: /home/ubuntu/get-pip.py
+        state: absent
+  when: not result.stat.exists
+
+- name: Clone app
+  ansible.builtin.git:
+    repo: https://github.com/TerebDan/DevOps-Trainee.git
+    dest: /home/ubuntu/django_app
+    version: accu154
+    force: yes
+
+- name: generate settings.py file
+  ansible.builtin.template:
+      src: settings.py.j2
+      dest: /home/ubuntu/django_app/settings.py
+
+- name: Create Python virtual env and install packages inside the virtual env
+  pip:
+    name: 
+    - django==1.4 
+    - mysqlclient
+    virtualenv: /home/ubuntu/venv
+    virtualenv_command: virtualenv
+    virtualenv_site_packages: no
+    virtualenv_python: python2
+
+- name: Start app
+  ansible.builtin.shell: . /home/ubuntu/venv/bin/activate && python /home/ubuntu/django_app/manage.py runserver 0.0.0.0:8000 &>/dev/null & 
