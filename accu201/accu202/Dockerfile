@@ -4,8 +4,6 @@ WORKDIR /usr/src
 
 RUN git clone -b accu154 https://github.com/TerebDan/DevOps-Trainee.git django_app
 
-COPY ./settings.py ./django_app 
-
 RUN pip install django==1.4 \ 
     mysqlclient
 
