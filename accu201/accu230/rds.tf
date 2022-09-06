@@ -2,6 +2,8 @@ resource "aws_db_subnet_group" "default" {
   name        = "rds-subnet-group"
   description = "Terraform RDS subnet group"
   subnet_ids  = module.vpc.public_subnets
+
+  tags                    = var.my_tags
 }
 
 resource "aws_security_group" "db_rules" {
@@ -65,6 +67,8 @@ resource "aws_iam_policy" "rds_policy" {
       },
     ] 
   })
+
+  tags                    = var.my_tags
 }
 
 resource "aws_iam_role_policy_attachment" "attach" {
@@ -86,7 +90,9 @@ resource "aws_s3_bucket_acl" "example" {
 resource "aws_s3_object" "object" {
   bucket = aws_s3_bucket.b.bucket
   key    = "backup"
-  source = "/home/dan/trainee/accu201/accu230/dump.sql"
+  source = var.dump_path
+
+  tags                    = var.my_tags
 }
 
 resource "aws_db_instance" "default" {
@@ -102,14 +108,6 @@ resource "aws_db_instance" "default" {
   publicly_accessible     = true
   db_subnet_group_name      = aws_db_subnet_group.default.id
   vpc_security_group_ids  = [ aws_security_group.db_rules.id ]
-
-  # s3_import {
-  #   source_engine         = "mysql"
-  #   source_engine_version = "8.0"
-  #   bucket_name           = aws_s3_bucket.b.bucket
-  #   bucket_prefix         = aws_s3_object.object.key
-  #   ingestion_role        = aws_iam_role.rds_role.arn 
-  # }
   
   tags                    = var.my_tags
 }

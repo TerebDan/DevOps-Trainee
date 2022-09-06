@@ -27,3 +27,9 @@ variable "cluster_name" {
   type        = string
   default     = "education-eks"
 }
+
+variable "dump_path" {
+  description = "path to MySQL dump file"
+  type        = string
+  default     = "/home/dan/trainee/accu201/accu230/dump.sql"
+}

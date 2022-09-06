@@ -23,4 +23,6 @@ module "vpc" {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"             = 1
   }
+
+  tags                    = var.my_tags
 }

@@ -11,4 +11,6 @@ resource "aws_security_group" "node_group_one" {
       "10.0.0.0/8",
     ]
   }
+
+  tags                    = var.my_tags
 }

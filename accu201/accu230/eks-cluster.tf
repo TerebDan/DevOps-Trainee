@@ -40,4 +40,6 @@ module "eks" {
       ]
     }
   }
+
+  tags                    = var.my_tags
 }
