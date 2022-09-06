@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-stringdata
+type: Opaque
+stringData:
+  db_name : "myapp"
+  username: "dan"
+  password: "12345678"
+  endpoint: "mydb1.cwvbtd59tymo.eu-central-1.rds.amazonaws.com"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-deploy
+  labels:
+    app: django
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-app
+  template:
+    metadata:
+      labels:
+        app: django-app
+    spec:
+      containers:
+      - name: django-app
+        image: 195167443138.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
+        ports:
+        - containerPort: 8000
+        env:
+          - name: NEW_MYSQL_DB_NAME 
+            valueFrom:
+              secretKeyRef:
+                name: secret-stringdata
+                key: db_name
+          - name: NEW_MYSQL_USER_NAME
+            valueFrom:
+              secretKeyRef:
+                name: secret-stringdata
+                key: username
+          - name: NEW_MYSQL_USER_PASS
+            valueFrom:
+              secretKeyRef:
+                name: secret-stringdata
+                key: password
+          - name: DB_SERVER_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: secret-stringdata
+                key: endpoint
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  labels:
+    owner: DaniilT
+spec:
+  selector:
+    app: django-app    # Selecting PODS with those Labels
+  ports:
+    - name      : app-listener
+      protocol  : TCP
+      port      : 80  # Port on Load Balancer
+      targetPort: 8000  # Port on POD
+  type: LoadBalancer
