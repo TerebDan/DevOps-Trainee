@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  labels:
+    owner: DaniilT
+spec:
+  selector:
+    app: django-app    # Selecting PODS with those Labels
+  ports:
+    - name      : app-listener
+      protocol  : TCP
+      port      : 80  # Port on Load Balancer
+      targetPort: 8000  # Port on POD
+  type: LoadBalancer

@@ -1,0 +1,9 @@
+containers:
+  image: 195167443138.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
+
+replicaCount: 2
+type        : LoadBalancer
+db_name     : myapp
+username    : 
+password    : 
+endpoint    : 

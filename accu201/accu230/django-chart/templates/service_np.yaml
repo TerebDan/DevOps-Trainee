@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-service
+  labels:
+    owner: DaniilT
+spec:
+  selector:
+    app: {{ .Release.Name }}    # Selecting PODS with those Labels
+  type: {{ .Values.type }}
+  ports:
+    - name      : {{ .Release.Name }}-listener
+      protocol  : TCP
+      port      : 80  
+      targetPort: 8000  # Port on POD
+      nodePort: 30000
+  
