@@ -4,16 +4,6 @@ variable "region" {
   default     = "eu-central-1"
 }
 
-variable "mysql_pass" {
-  description   = "MySQL password"
-  type          = string
-}
-
-variable "mysql_login" {
-  description   = "MySQL login"
-  type          = string
-}
-
 variable "my_tags" {
   description   = "default tags"
   type          = map
@@ -23,13 +13,17 @@ variable "my_tags" {
 }
 
 variable "cluster_name" {
-  description = "AWS region"
+  description = "EKS cluster name"
   type        = string
   default     = "education-eks"
 }
 
-variable "dump_path" {
-  description = "path to MySQL dump file"
+variable "vpc_id" {
+  description = "VPC id"
   type        = string
-  default     = "/home/dan/trainee/accu201/accu230/dump.sql"
+}
+
+variable "vpc_private_subnets" {
+  description = "VPC private subnets"
+  type        = tuple
 }

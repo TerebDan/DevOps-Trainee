@@ -7,12 +7,10 @@ metadata:
     owner: DaniilT
 spec:
   selector:
-    app: {{ .Release.Name }}    # Selecting PODS with those Labels
-  type: {{ .Values.type }}
+    app: {{ .Release.Name }}  # Selecting PODS with those Labels
   ports:
     - name      : {{ .Release.Name }}-listener
       protocol  : TCP
-      port      : 80  
+      port      : 80  # Port on Load Balancer
       targetPort: 8000  # Port on POD
-      nodePort: 30000
-  
+  type: LoadBalancer

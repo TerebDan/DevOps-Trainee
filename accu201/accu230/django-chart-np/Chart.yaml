@@ -1,0 +1,11 @@
+apiVersion : v2
+name       : App-HelmChart
+description: My Helm chart for Kubernetes
+type       : application
+
+keywords:
+  - django
+  - k8s secrets
+
+maintainers:
+  - owner : DaniilT

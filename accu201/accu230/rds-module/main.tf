@@ -1,14 +1,18 @@
+provider "aws" {
+  region = var.region
+}
+
 resource "aws_db_subnet_group" "default" {
   name        = "rds-subnet-group"
   description = "Terraform RDS subnet group"
-  subnet_ids  = module.vpc.public_subnets
+  subnet_ids  = var.vpc_public_subnets
 
-  tags                    = var.my_tags
+  tags = var.my_tags
 }
 
 resource "aws_security_group" "db_rules" {
   name               = "db_rules"
-  vpc_id             = module.vpc.vpc_id 
+  vpc_id             = var.vpc_id 
 
   ingress {
     from_port        = 3306
@@ -68,7 +72,7 @@ resource "aws_iam_policy" "rds_policy" {
     ] 
   })
 
-  tags                    = var.my_tags
+  tags = var.my_tags
 }
 
 resource "aws_iam_role_policy_attachment" "attach" {
@@ -79,7 +83,7 @@ resource "aws_iam_role_policy_attachment" "attach" {
 resource "aws_s3_bucket" "b" {
   bucket = "backup-bucket-for-rds"
 
-  tags = var.my_tags
+  tags   = var.my_tags
 }
 
 resource "aws_s3_bucket_acl" "example" {
@@ -92,7 +96,7 @@ resource "aws_s3_object" "object" {
   key    = "backup"
   source = var.dump_path
 
-  tags                    = var.my_tags
+  tags   = var.my_tags
 }
 
 resource "aws_db_instance" "default" {
