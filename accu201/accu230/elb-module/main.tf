@@ -2,11 +2,8 @@ provider "aws" {
   region = var.region
 }
 
-data "aws_availability_zones" "available" {}
-
 resource "aws_elb" "main" {
   name               = "my-elb"
-  # availability_zones = slice(data.aws_availability_zones.available.names, 0, 3)
   security_groups = [ aws_security_group.lb_rules.id ]
   subnets = var.vpc_public_subnets
 
