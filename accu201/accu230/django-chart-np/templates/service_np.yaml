@@ -9,9 +9,9 @@ spec:
   selector:
     app: {{ .Release.Name }}    # Selecting PODS with those Labels
   ports:
-      port      : 8000  
-      targetPort: 8000  # Port on POD
-      nodePort: 30000
+      - port      : 8000  
+        targetPort: 8000  # Port on POD
+        nodePort: 30000
   type: NodePort
 
   
