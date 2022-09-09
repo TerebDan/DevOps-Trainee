@@ -25,5 +25,5 @@ variable "vpc_id" {
 
 variable "vpc_private_subnets" {
   description = "VPC private subnets"
-  type        = tuple
+  type        = list(string)
 }

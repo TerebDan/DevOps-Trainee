@@ -6,7 +6,8 @@ resource "aws_instance" "DB_server" {
     ami = "ami-065deacbcaac64cf2"
     instance_type = "t2.micro"
     key_name = var.ssh_key_name
-    security_groups = [ aws_security_group.db_rules.name ]
+    vpc_security_group_ids = [ aws_security_group.db_rules.id ]
+    subnet_id = var.subnet_id
 
     tags = var.my_tags
 }

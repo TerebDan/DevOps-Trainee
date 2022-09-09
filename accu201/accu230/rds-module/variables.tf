@@ -35,5 +35,5 @@ variable "vpc_id" {
 
 variable "vpc_public_subnets" {
   description = "VPC public subnets"
-  type        = tuple
+  type        = list(string)
 }

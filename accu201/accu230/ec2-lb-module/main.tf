@@ -5,8 +5,9 @@ provider "aws" {
 resource "aws_instance" "Load_balancer" {
     ami = "ami-0c956e207f9d113d5"
     instance_type = "t2.micro"
-    key_name = "MyKeyPair"
-    security_groups = [ aws_security_group.lb_rules.name ]
+    key_name = var.ssh_key_name
+    vpc_security_group_ids  = [ aws_security_group.lb_rules.id ]
+    subnet_id = var.subnet_id
 
     tags = var.my_tags
 }

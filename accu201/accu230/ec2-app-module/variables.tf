@@ -22,3 +22,8 @@ variable "vpc_id" {
   description = "VPC id"
   type        = string
 }
+
+variable "subnet_id" {
+  description = "VPC subnet id"
+  type        = string
+}
