@@ -8,7 +8,7 @@ resource "aws_elb" "main" {
   subnets = var.vpc_public_subnets
 
   listener {
-    instance_port     = 30000
+    instance_port     = 80
     instance_protocol = "http"
     lb_port           = 80
     lb_protocol       = "http"
