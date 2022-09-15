@@ -103,7 +103,7 @@ resource "aws_db_instance" "default" {
   identifier              = "mydb1"
   allocated_storage       = 20
   engine                  = "mysql"
-  engine_version          = "5.6"
+  engine_version          = "5.7"
   instance_class          = "db.t3.micro"
   username                = var.mysql_login
   password                = var.mysql_pass
