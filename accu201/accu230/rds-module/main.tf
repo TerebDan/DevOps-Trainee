@@ -103,7 +103,7 @@ resource "aws_db_instance" "default" {
   identifier              = "mydb1"
   allocated_storage       = 20
   engine                  = "mysql"
-  engine_version          = "5.7"
+  engine_version          = "8.0"
   instance_class          = "db.t3.micro"
   username                = var.mysql_login
   password                = var.mysql_pass
@@ -112,14 +112,6 @@ resource "aws_db_instance" "default" {
   publicly_accessible     = true
   db_subnet_group_name      = aws_db_subnet_group.default.id
   vpc_security_group_ids  = [ aws_security_group.db_rules.id ]
-
-  s3_import {
-    source_engine         = "mysql"
-    source_engine_version = "5.6"
-    bucket_name           = aws_s3_bucket.b.bucket
-    bucket_prefix         = aws_s3_object.object.key
-    ingestion_role        = aws_iam_role.rds_role.arn
-  }
   
   tags                    = var.my_tags
 }
