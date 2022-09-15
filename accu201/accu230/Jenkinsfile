@@ -443,6 +443,7 @@ pipeline {
                     else{
                         dir('temp/eks-module') {
                             sh "echo 'destroy EKS'"
+                            sh "helm delete app"
                             sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
                         }
                     }
