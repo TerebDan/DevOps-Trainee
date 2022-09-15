@@ -17,7 +17,7 @@ pipeline {
                     properties([
                         parameters([
                             choice(
-                                choices: ['Django', 'Ruby on Rails'], 
+                                choices: ['Django', 'Ruby on Rails', 'Both'], 
                                 description: 'Select app version', 
                                 name: 'START_OPTION'
                             ),
@@ -42,24 +42,36 @@ pipeline {
                     string SKIP_TAGS = ""
 
                     if (params.APP_OPTION == "EKS") {
-                        SKIP_TAGS = "APP_ruby,APP_django"
+                        SKIP_TAGS = "APP_ruby,APP_django,LB"
                     } 
                     else {
                         if (params.START_OPTION == "Django") {
                             SKIP_TAGS = "APP_ruby"
                         } 
-                        else {
+
+                        if (params.START_OPTION == "Ruby on Rails") {
                             SKIP_TAGS = "APP_django"
                         }
+
+                        if (params.LB_OPTION != "EC2") {
+                            if (SKIP_TAGS == "") { SKIP_TAGS = "LB"}
+                            else { SKIP_TAGS += ",LB"}
+                        } 
                     }
 
-                    if (params.LB_OPTION != "EC2") {
-                        SKIP_TAGS += ",LB"
+                    if (params.DB_OPTION != "EC2") {
+                        if (SKIP_TAGS == "") { SKIP_TAGS = "DB"}
+                        else { SKIP_TAGS += ",DB"}
                     } 
 
-                    if (params.DB_OPTION != "EC2") {
-                        SKIP_TAGS += ",DB"
+                    sh "echo 'START_OPTION: $START_OPTION'"
+                    sh "echo 'DB_OPTION: $DB_OPTION'"
+                    sh "echo 'APP_OPTION: $APP_OPTION'"
+                    if (params.APP_OPTION != "EKS") {
+                        sh "echo 'LB_OPTION: $LB_OPTION'"
                     } 
+
+                    sh "echo 'ANSIBLE SKIP_TAGS: $SKIP_TAGS'"
                 }
 
                 git branch: 'accu230', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
@@ -152,6 +164,8 @@ pipeline {
                                 sh 'terraform init'
                                 sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
                                 sh "terraform output -json > vars.txt"
+
+                                sh "sleep 300"
                             }
                         }
                     }
@@ -209,12 +223,12 @@ pipeline {
                             APP_PRIV_IP = ""
                             APP_DNS_NAME = ""
 
-                            sh 'aws eks --region $(jq .region.value vars.txt) update-kubeconfig --name $(jq .cluster_name.value vars.txt)'
+                            sh 'aws eks --region $(jq -r .region.value vars.txt) update-kubeconfig --name $(jq -r .cluster_name.value vars.txt)'
 
                             sh "helm install app ../django-chart-lb --set username=$MYSQL_USER_NAME \
                                 --set password=$MYSQL_USER_PASS --set endpoint=$DB_PRIV_IP"
 
-                            sh "sleep 60"
+                            sh "sleep 120"
 
                             string EKS_ELB_DNS_NAME = sh(returnStdout: true, script: "aws elb describe-load-balancers \
                                 --region eu-central-1 --query 'LoadBalancerDescriptions[*].[DNSName]' \
@@ -230,6 +244,7 @@ pipeline {
                 dir('temp/r53-record-module') {
                     script{
                         if (params.APP_OPTION == "EKS") {
+                            sh "echo 'create R53-EKS'"
                             sh "echo 'dns_name=\"${EKS_ELB_DNS_NAME}\"' > vars.tfvars"
                             sh "echo 'zone_id=\"${EKS_ELB_ZONE}\"' >> vars.tfvars"
                             sh 'cat vars.tfvars'
@@ -387,11 +402,13 @@ pipeline {
                     if (params.APP_OPTION == "EC2") {
                         if (params.LB_OPTION == "EC2") {
                             dir('temp/ec2-lb-module') {
+                                sh "echo 'destroy EC2-LB'"
                                 sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
                             }
                         } 
                         else{
                             dir('temp/elb-module') {
+                                sh "echo 'destroy ELB'"
                                 sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
                             }
                         }
@@ -399,33 +416,39 @@ pipeline {
 
                     if (params.APP_OPTION == "EKS") {
                         dir('temp/r53-record-module') {
+                            sh "echo 'destroy R53-EKS'"
                             sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
                         }
                     }
 
                     if (params.DB_OPTION == "EC2") {
                         dir('temp/ec2-db-module') {
+                            sh "echo 'destroy EC2-DB'"
                             sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
                         }
                     } 
                     else{
                         dir('temp/rds-module') {
+                            sh "echo 'destroy RDS'"
                             sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
                         }
                     }
 
                     if (params.APP_OPTION == "EC2") {
                         dir('temp/ec2-app-module') {
+                            sh "echo 'destroy EC2-APP'"
                             sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
                         }
                     } 
                     else{
                         dir('temp/eks-module') {
+                            sh "echo 'destroy EKS'"
                             sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
                         }
                     }
 
                     dir('temp/vpc-module') {
+                        sh "echo 'destroy VPC'"
                         sh 'terraform destroy -auto-approve'
                     }
                 }
