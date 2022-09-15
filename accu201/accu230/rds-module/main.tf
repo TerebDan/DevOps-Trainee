@@ -103,7 +103,7 @@ resource "aws_db_instance" "default" {
   identifier              = "mydb1"
   allocated_storage       = 20
   engine                  = "mysql"
-  engine_version          = "8.0"
+  engine_version          = "5.6"
   instance_class          = "db.t3.micro"
   username                = var.mysql_login
   password                = var.mysql_pass
@@ -115,7 +115,7 @@ resource "aws_db_instance" "default" {
 
   s3_import {
     source_engine         = "mysql"
-    source_engine_version = "8.0"
+    source_engine_version = "5.6"
     bucket_name           = aws_s3_bucket.b.bucket
     bucket_prefix         = aws_s3_object.object.key
     ingestion_role        = aws_iam_role.rds_role.arn
