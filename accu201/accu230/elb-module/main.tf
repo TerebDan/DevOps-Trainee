@@ -14,6 +14,14 @@ resource "aws_elb" "main" {
     lb_protocol       = "http"
   }
 
+   health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 5
+    target              = "HTTP:8000/"
+    interval            = 30
+  }
+
   instances = var.instances_id 
 
   tags = var.my_tags
@@ -42,14 +50,6 @@ resource "aws_security_group" "lb_rules" {
     to_port          = 0
     protocol         = "-1"
     cidr_blocks      = ["0.0.0.0/0"]
-  }
-
-  health_check {
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    timeout             = 5
-    target              = "HTTP:8000/"
-    interval            = 30
   }
 
   tags = var.my_tags
