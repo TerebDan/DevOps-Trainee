@@ -165,7 +165,7 @@ pipeline {
                                 sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
                                 sh "terraform output -json > vars.txt"
 
-                                sh "sleep 300"
+                                sh "sleep 180"
                             }
                         }
                     }
@@ -241,9 +241,9 @@ pipeline {
                     }
                 }
 
-                dir('temp/r53-record-module') {
-                    script{
-                        if (params.APP_OPTION == "EKS") {
+                script{
+                    if (params.APP_OPTION == "EKS") {
+                        dir('temp/r53-record-module') {
                             sh "echo 'create R53-EKS'"
                             sh "echo 'dns_name=\"${EKS_ELB_DNS_NAME}\"' > vars.tfvars"
                             sh "echo 'zone_id=\"${EKS_ELB_ZONE}\"' >> vars.tfvars"
@@ -254,6 +254,8 @@ pipeline {
                             sh "terraform output -json > vars.txt"
 
                             LB_DNS_NAME = sh(returnStdout: true, script: "jq .eks_dns_name.value vars.txt").trim()
+
+                            sh "sleep 120"
                         }
                     }
                 }
@@ -271,6 +273,8 @@ pipeline {
                                 --extra-vars \"django_app_ip_port=${APP_PRIV_IP}:8000 \
                                 db_server_ip=${DB_PRIV_IP} mysql_root_password=${MYSQL_ROOT_PASS} new_mysql_db_name=${MYSQL_DB_NAME} \
                                 new_mysql_user_name=${MYSQL_USER_NAME} new_mysql_user_pass=${MYSQL_USER_PASS}\""
+                        
+                            sh "sleep 120"
                         }
                     }
                 }
@@ -452,6 +456,8 @@ pipeline {
                         sh "echo 'destroy VPC'"
                         sh 'terraform destroy -auto-approve'
                     }
+
+                    sh 'rm -rf temp'
                 }
             }
 
