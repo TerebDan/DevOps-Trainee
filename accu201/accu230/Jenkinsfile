@@ -164,8 +164,6 @@ pipeline {
                                 sh 'terraform init'
                                 sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
                                 sh "terraform output -json > vars.txt"
-
-                                sh "sleep 180"
                             }
                         }
                     }
@@ -274,7 +272,7 @@ pipeline {
                                 db_server_ip=${DB_PRIV_IP} mysql_root_password=${MYSQL_ROOT_PASS} new_mysql_db_name=${MYSQL_DB_NAME} \
                                 new_mysql_user_name=${MYSQL_USER_NAME} new_mysql_user_pass=${MYSQL_USER_PASS}\""
                         
-                            sh "sleep 120"
+                            sh "sleep 180"
                         }
                     }
                 }
