@@ -43,6 +43,7 @@ pipeline {
 
                     if (params.APP_OPTION == "EKS") {
                         SKIP_TAGS = "APP_ruby,APP_django,LB"
+                        params.LB_OPTION = ""
                     } 
                     else {
                         if (params.START_OPTION == "Django") {
@@ -220,8 +221,37 @@ pipeline {
                         else{
                             APP_PRIV_IP = ""
                             APP_DNS_NAME = ""
+                            LB_DNS_NAME = ""
+                        }
+                    }
+                }
 
-                            sh 'aws eks --region $(jq -r .region.value vars.txt) update-kubeconfig --name $(jq -r .cluster_name.value vars.txt)'
+                dir('accu163') {
+                    script {
+                        if (params.APP_OPTION == "EC2" || params.DB_OPTION == "EC2" || params.LB_OPTION == "EC2") {
+                            sh "echo \"[DB_servers]\n${DB_DNS_NAME} ansible_user=ubuntu\n\n \
+                                [APP_servers]\n${APP_DNS_NAME} ansible_user=ubuntu\n\n \
+                                [LB_servers]\n${LB_DNS_NAME} ansible_user=ec2-user\n\n \
+                                [Deploy:children]\nDB_servers\nAPP_servers\nLB_servers\n\n \
+                                [Deploy:vars]\nansible_ssh_private_key_file=${SSH_KEY_PATH}\" > hosts"
+
+                            sh "ansible-playbook accu163.yml --skip-tags \"${SKIP_TAGS}\" \
+                                --extra-vars \"django_app_ip_port=${APP_PRIV_IP}:8000 \
+                                db_server_ip=${DB_PRIV_IP} mysql_root_password=${MYSQL_ROOT_PASS} new_mysql_db_name=${MYSQL_DB_NAME} \
+                                new_mysql_user_name=${MYSQL_USER_NAME} new_mysql_user_pass=${MYSQL_USER_PASS}\""
+
+                            if (params.APP_OPTION == "EC2" && params.LB_OPTION == "ELB") {
+                                sh "sleep 180"
+                            }
+                        }
+                    }
+                }
+
+                dir('temp/r53-record-module') {
+                    script {
+                        if (params.APP_OPTION == "EKS") {
+                            sh 'aws eks --region $(jq -r .region.value ../eks-module/vars.txt) update-kubeconfig \
+                                --name $(jq -r .cluster_name.value ../eks-module/vars.txt)'
 
                             sh "helm install app ../django-chart-lb --set username=$MYSQL_USER_NAME \
                                 --set password=$MYSQL_USER_PASS --set endpoint=$DB_PRIV_IP"
@@ -235,13 +265,7 @@ pipeline {
                             string EKS_ELB_ZONE = sh(returnStdout: true, script: "aws elb describe-load-balancers \
                                 --region eu-central-1 --query 'LoadBalancerDescriptions[*].[CanonicalHostedZoneNameID]' \
                                 --output text").trim()
-                        }
-                    }
-                }
-
-                script{
-                    if (params.APP_OPTION == "EKS") {
-                        dir('temp/r53-record-module') {
+                                
                             sh "echo 'create R53-EKS'"
                             sh "echo 'dns_name=\"${EKS_ELB_DNS_NAME}\"' > vars.tfvars"
                             sh "echo 'zone_id=\"${EKS_ELB_ZONE}\"' >> vars.tfvars"
@@ -255,26 +279,7 @@ pipeline {
 
                             sh "sleep 120"
                         }
-                    }
-                }
-
-                dir('accu163') {
-                    script{
-                        if (params.APP_OPTION == "EC2" || params.DB_OPTION == "EC2" || params.LB_OPTION == "EC2") {
-                            sh "echo \"[DB_servers]\n${DB_DNS_NAME} ansible_user=ubuntu\n\n \
-                                [APP_servers]\n${APP_DNS_NAME} ansible_user=ubuntu\n\n \
-                                [LB_servers]\n${LB_DNS_NAME} ansible_user=ec2-user\n\n \
-                                [Deploy:children]\nDB_servers\nAPP_servers\nLB_servers\n\n \
-                                [Deploy:vars]\nansible_ssh_private_key_file=${SSH_KEY_PATH}\" > hosts"
-
-                            sh "ansible-playbook accu163.yml --skip-tags \"${SKIP_TAGS}\" \
-                                --extra-vars \"django_app_ip_port=${APP_PRIV_IP}:8000 \
-                                db_server_ip=${DB_PRIV_IP} mysql_root_password=${MYSQL_ROOT_PASS} new_mysql_db_name=${MYSQL_DB_NAME} \
-                                new_mysql_user_name=${MYSQL_USER_NAME} new_mysql_user_pass=${MYSQL_USER_PASS}\""
-                        
-                            sh "sleep 180"
-                        }
-                    }
+                    }    
                 }
             }
 
