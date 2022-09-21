@@ -1,0 +1,477 @@
+pipeline {
+    agent any
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('aws_key_id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws_secret_key_id')
+        AWS_REGION = credentials('aws_region')
+        SSH_KEY_PATH = credentials('ssh_key')
+        MYSQL_ROOT_PASS = credentials('mysql_root_password')
+        MYSQL_DB_NAME = credentials('new_mysql_db_name')
+        MYSQL_USER_NAME = credentials('new_mysql_user_name')
+        MYSQL_USER_PASS = credentials('new_mysql_user_pass')
+    }
+    stages {
+        stage('Terraform apply') {
+            steps {
+                script {
+                    properties([
+                        parameters([
+                            choice(
+                                choices: ['Django', 'Ruby on Rails', 'Both'], 
+                                description: 'Select app version', 
+                                name: 'START_OPTION'
+                            ),
+                            choice(
+                                choices: ['EC2', 'RDS'], 
+                                description: 'Select db server type', 
+                                name: 'DB_OPTION'
+                            ),
+                            choice(
+                                choices: ['EC2', 'EKS'], 
+                                description: 'Select app server type', 
+                                name: 'APP_OPTION'
+                            ),
+                            choice(
+                                choices: ['EC2', 'ELB'], 
+                                description: 'Select lb server type (ONLY for EC2 app server!!!)', 
+                                name: 'LB_OPTION'
+                            )
+                        ])
+                    ])
+                    
+                    string SKIP_TAGS = ""
+
+                    if (params.APP_OPTION == "EKS") {
+                        SKIP_TAGS = "APP_ruby,APP_django,LB"
+                        params.LB_OPTION = ""
+                    } 
+                    else {
+                        if (params.START_OPTION == "Django") {
+                            SKIP_TAGS = "APP_ruby"
+                        } 
+
+                        if (params.START_OPTION == "Ruby on Rails") {
+                            SKIP_TAGS = "APP_django"
+                        }
+
+                        if (params.LB_OPTION != "EC2") {
+                            if (SKIP_TAGS == "") { SKIP_TAGS = "LB"}
+                            else { SKIP_TAGS += ",LB"}
+                        } 
+                    }
+
+                    if (params.DB_OPTION != "EC2") {
+                        if (SKIP_TAGS == "") { SKIP_TAGS = "DB"}
+                        else { SKIP_TAGS += ",DB"}
+                    } 
+
+                    sh "echo 'START_OPTION: $START_OPTION'"
+                    sh "echo 'DB_OPTION: $DB_OPTION'"
+                    sh "echo 'APP_OPTION: $APP_OPTION'"
+                    if (params.APP_OPTION != "EKS") {
+                        sh "echo 'LB_OPTION: $LB_OPTION'"
+                    } 
+
+                    sh "echo 'ANSIBLE SKIP_TAGS: $SKIP_TAGS'"
+                }
+
+                git branch: 'accu230', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
+                
+                sh 'mkdir -p temp'
+                sh 'cp -ur accu201/accu230/* temp'
+
+                dir('temp/vpc-module') {
+                    sh "echo 'create VPC'"
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                    sh 'terraform output -json > vars.txt'
+                }
+
+                script{
+                    if (params.DB_OPTION == "EC2") {
+                        dir('temp/ec2-db-module') {
+                            sh "echo 'create EC2-DB'"
+                            sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                            sh 'echo "subnet_id=$(jq .vpc_public_subnets.value ../vpc-module/vars.txt | jq .[1])" >> vars.tfvars'
+                            sh 'cat vars.tfvars'
+
+                            sh 'terraform init'
+                            sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                            sh 'terraform output -json > vars.txt'
+                        }
+                    } 
+                    else{
+                        dir('temp/rds-module') {
+                            sh "echo 'create RDS'"
+                            sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                            sh 'echo "vpc_public_subnets=$(jq .vpc_public_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
+                            sh "echo 'dump_path=\"../dump.sql\"' >> vars.tfvars"
+                            sh "echo 'mysql_pass=\"${MYSQL_USER_PASS}\"' >> vars.tfvars"
+                            sh "echo 'mysql_login=\"${MYSQL_USER_NAME}\"' >> vars.tfvars"
+                            sh 'cat vars.tfvars'
+
+                            sh 'terraform init'
+                            sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                            sh 'terraform output -json > vars.txt'
+                        }
+                    }
+
+                    if (params.APP_OPTION == "EC2") {
+                        dir('temp/ec2-app-module') {
+                            sh "echo 'create EC2-APP'"
+                            sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                            sh 'echo "subnet_id=$(jq .vpc_public_subnets.value ../vpc-module/vars.txt | jq .[0])" >> vars.tfvars'
+                            sh 'cat vars.tfvars'
+
+                            sh 'terraform init'
+                            sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                            sh 'terraform output -json > vars.txt'
+                        }
+                    } 
+                    else{
+                        dir('temp/eks-module') {
+                            sh "echo 'create EKS'"
+                            sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                            sh 'echo "vpc_private_subnets=$(jq .vpc_private_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
+                            sh 'cat vars.tfvars'
+
+                            sh 'terraform init'
+                            sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                            sh "terraform output -json > vars.txt"
+                        }
+                    }
+
+                    if (params.APP_OPTION == "EC2") {
+                        if (params.LB_OPTION == "EC2") {
+                            dir('temp/ec2-lb-module') {
+                                sh "echo 'create EC2-LB'"
+                                sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                                sh 'echo "subnet_id=$(jq .vpc_public_subnets.value ../vpc-module/vars.txt | jq .[2])" >> vars.tfvars'
+                                sh 'cat vars.tfvars'
+
+                                sh 'terraform init'
+                                sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                                sh 'terraform output -json > vars.txt'
+                            }
+                        } 
+                        else{
+                            dir('temp/elb-module') {
+                                sh "echo 'create ELB'"
+                                sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                                sh 'echo "vpc_public_subnets=$(jq .vpc_public_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
+                                sh 'echo "instances_id=[\"$(jq .app_server_id.value ../ec2-app-module/vars.txt)\",]" >> vars.tfvars'
+                                sh 'cat vars.tfvars'
+
+                                sh 'terraform init'
+                                sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                                sh "terraform output -json > vars.txt"
+                            }
+                        }
+                    }
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Terraform apply: all fine"'
+                }
+                failure {
+                    sh 'echo "Terraform apply: fail"'
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                dir('temp/eks-module') {
+                    script{
+                        if (params.DB_OPTION == "EC2") {
+                            string DB_PRIV_IP = sh(returnStdout: true, script: "jq .db_private_ip.value \
+                            ../ec2-db-module/vars.txt").trim()
+
+                            string DB_DNS_NAME = sh(returnStdout: true, script: "jq .db_server_dns_name.value \
+                            ../ec2-db-module/vars.txt").trim()
+                        }
+                        else {
+                            DB_DNS_NAME = sh(returnStdout: true, script: "jq -r .db_private_ip.value \
+                            ../rds-module/vars.txt").trim()
+
+                            DB_PRIV_IP = DB_DNS_NAME
+
+                            sh "aws s3 cp s3://backup-bucket-for-rds/backup - |\
+                                mysql -h $DB_PRIV_IP -u $MYSQL_USER_NAME --password=\"$MYSQL_USER_PASS\""
+                        }
+
+                        if (params.APP_OPTION == "EC2") {
+                            if (params.LB_OPTION == "EC2") {
+                                string LB_DNS_NAME = sh(returnStdout: true, script: "jq .lb_server_dns_name.value \
+                                ../ec2-lb-module/vars.txt").trim()
+                            }
+                            else {
+                                LB_DNS_NAME = sh(returnStdout: true, script: "jq .elb_dns_name.value \
+                                ../elb-module/vars.txt").trim()
+                            }
+
+                            string APP_PRIV_IP = sh(returnStdout: true, script: "jq .app_private_ip.value \
+                            ../ec2-app-module/vars.txt").trim()
+
+                            string APP_DNS_NAME = sh(returnStdout: true, script: "jq .app_server_dns_name.value \
+                            ../ec2-app-module/vars.txt").trim()
+                        }
+                        else{
+                            APP_PRIV_IP = ""
+                            APP_DNS_NAME = ""
+                            LB_DNS_NAME = ""
+                        }
+                    }
+                }
+
+                dir('accu163') {
+                    script {
+                        if (params.APP_OPTION == "EC2" || params.DB_OPTION == "EC2" || params.LB_OPTION == "EC2") {
+                            sh "echo \"[DB_servers]\n${DB_DNS_NAME} ansible_user=ubuntu\n\n \
+                                [APP_servers]\n${APP_DNS_NAME} ansible_user=ubuntu\n\n \
+                                [LB_servers]\n${LB_DNS_NAME} ansible_user=ec2-user\n\n \
+                                [Deploy:children]\nDB_servers\nAPP_servers\nLB_servers\n\n \
+                                [Deploy:vars]\nansible_ssh_private_key_file=${SSH_KEY_PATH}\" > hosts"
+
+                            sh "ansible-playbook accu163.yml --skip-tags \"${SKIP_TAGS}\" \
+                                --extra-vars \"django_app_ip_port=${APP_PRIV_IP}:8000 \
+                                db_server_ip=${DB_PRIV_IP} mysql_root_password=${MYSQL_ROOT_PASS} new_mysql_db_name=${MYSQL_DB_NAME} \
+                                new_mysql_user_name=${MYSQL_USER_NAME} new_mysql_user_pass=${MYSQL_USER_PASS}\""
+
+                            if (params.APP_OPTION == "EC2" && params.LB_OPTION == "ELB") {
+                                sh "sleep 180"
+                            }
+                        }
+                    }
+                }
+
+                dir('temp/r53-record-module') {
+                    script {
+                        if (params.APP_OPTION == "EKS") {
+                            sh 'aws eks --region $(jq -r .region.value ../eks-module/vars.txt) update-kubeconfig \
+                                --name $(jq -r .cluster_name.value ../eks-module/vars.txt)'
+
+                            sh "helm install app ../django-chart-lb --set username=$MYSQL_USER_NAME \
+                                --set password=$MYSQL_USER_PASS --set endpoint=$DB_PRIV_IP"
+
+                            sh "sleep 120"
+
+                            string EKS_ELB_DNS_NAME = sh(returnStdout: true, script: "aws elb describe-load-balancers \
+                                --region eu-central-1 --query 'LoadBalancerDescriptions[*].[DNSName]' \
+                                --output text").trim()
+
+                            string EKS_ELB_ZONE = sh(returnStdout: true, script: "aws elb describe-load-balancers \
+                                --region eu-central-1 --query 'LoadBalancerDescriptions[*].[CanonicalHostedZoneNameID]' \
+                                --output text").trim()
+                                
+                            sh "echo 'create R53-EKS'"
+                            sh "echo 'dns_name=\"${EKS_ELB_DNS_NAME}\"' > vars.tfvars"
+                            sh "echo 'zone_id=\"${EKS_ELB_ZONE}\"' >> vars.tfvars"
+                            sh 'cat vars.tfvars'
+
+                            sh 'terraform init'
+                            sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                            sh "terraform output -json > vars.txt"
+
+                            LB_DNS_NAME = sh(returnStdout: true, script: "jq .eks_dns_name.value vars.txt").trim()
+
+                            sh "sleep 120"
+                        }
+                    }    
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Build: all fine"'
+                }
+                failure {
+                    sh 'echo "Build: fail"'
+                }
+            }
+        }
+        
+        stage('Test the setup') {
+            parallel {
+                
+                stage('Test LB server') {
+                    steps {
+                        script {
+                            sh(script: "nmap ${LB_DNS_NAME} -p 80 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+
+                stage('Test DB server') {
+                    steps {
+                        script {
+                            sh(script: "nmap ${DB_DNS_NAME} -p 3306 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+
+                stage('Test APP server') {
+                    steps {
+                        script {
+                            if (params.APP_OPTION == "EC2"){
+                                sh(script: "nmap ${APP_DNS_NAME} -p 8000 | grep -o open", returnStdout: true)
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // post {
+            //     failure {
+            //         sh 'echo "Terraform destroy"'
+            //         dir('temp') {
+            //             sh 'terraform destroy -auto-approve'
+            //         }
+            //     }
+            // }
+        }
+
+        stage('Test the application') {
+            parallel {
+
+                stage('Test index.html') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME} \
+                                -o /dev/null", returnStdout: true).trim()
+                                    
+                            if (status != "200") {
+                                error("index.html error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test dbread') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/dbread \
+                                -o /dev/null", returnStdout: true).trim()
+                                    
+                            if (status != "200") {
+                                error("dbread error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test appserver') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/appserver \
+                                -o /dev/null", returnStdout: true).trim()
+                                    
+                            if (status != "200") {
+                                error("appserver error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test serverid') {
+                    steps {
+                        script {
+                            try {
+                                string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/serverid \
+                                    -o /dev/null", returnStdout: true).trim()
+                                        
+                                if (status != "200") {
+                                    error("serverid error")
+                                }
+                            } catch (Exception e) {
+                                echo 'Serverid fail'
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // post {
+            //     failure {
+            //         sh 'echo "Terraform destroy"'
+            //         dir('temp') {
+            //             sh 'terraform destroy -auto-approve'
+            //         }
+            //     }
+            // }
+        }
+
+        stage('Terraform destroy') {
+            steps {
+                script{
+                    if (params.APP_OPTION == "EC2") {
+                        if (params.LB_OPTION == "EC2") {
+                            dir('temp/ec2-lb-module') {
+                                sh "echo 'destroy EC2-LB'"
+                                sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                            }
+                        } 
+                        else{
+                            dir('temp/elb-module') {
+                                sh "echo 'destroy ELB'"
+                                sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                            }
+                        }
+                    }
+
+                    if (params.APP_OPTION == "EKS") {
+                        dir('temp/r53-record-module') {
+                            sh "echo 'destroy R53-EKS'"
+                            sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                        }
+                    }
+
+                    if (params.DB_OPTION == "EC2") {
+                        dir('temp/ec2-db-module') {
+                            sh "echo 'destroy EC2-DB'"
+                            sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                        }
+                    } 
+                    else{
+                        dir('temp/rds-module') {
+                            sh "echo 'destroy RDS'"
+                            sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                        }
+                    }
+
+                    if (params.APP_OPTION == "EC2") {
+                        dir('temp/ec2-app-module') {
+                            sh "echo 'destroy EC2-APP'"
+                            sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                        }
+                    } 
+                    else{
+                        dir('temp/eks-module') {
+                            sh "echo 'destroy EKS'"
+                            sh "helm delete app"
+                            sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                        }
+                    }
+
+                    dir('temp/vpc-module') {
+                        sh "echo 'destroy VPC'"
+                        sh 'terraform destroy -auto-approve'
+                    }
+
+                    sh 'rm -rf temp'
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Terraform destroy: all fine"'
+                }
+                failure {
+                    sh 'echo "Terraform destroy: fail"'
+                }
+            }
+        }
+    }
+}
