@@ -21,13 +21,6 @@ resource "aws_security_group" "db_rules" {
     cidr_blocks      = ["0.0.0.0/0"]
   }
 
-  ingress {
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-  }
-
   egress {
     from_port        = 0
     to_port          = 0
@@ -36,48 +29,6 @@ resource "aws_security_group" "db_rules" {
   }
 
   tags               = var.my_tags
-}
-
-resource "aws_iam_role" "rds_role" {
-  name = "rds-s3-import-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "rds.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      },
-    ]
-  })
-
-  tags = var.my_tags
-}
-
-resource "aws_iam_policy" "rds_policy" {
-  name        = "rds-s3-import-policy"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid = "s3import"
-        Action = "s3:*"
-        Effect = "Allow"
-        Resource = "*" 
-      },
-    ] 
-  })
-
-  tags = var.my_tags
-}
-
-resource "aws_iam_role_policy_attachment" "attach" {
-  role       = aws_iam_role.rds_role.name
-  policy_arn = aws_iam_policy.rds_policy.arn
 }
 
 resource "aws_s3_bucket" "b" {
