@@ -1,0 +1,261 @@
+pipeline {
+    agent any
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('aws_key_id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws_secret_key_id')
+        AWS_REGION = credentials('aws_region')
+        MYSQL_ROOT_PASS = credentials('mysql_root_password')
+        MYSQL_DB_NAME = credentials('new_mysql_db_name')
+        MYSQL_USER_NAME = credentials('new_mysql_user_name')
+        MYSQL_USER_PASS = credentials('new_mysql_user_pass')
+    }
+    stages {
+        stage('Terraform apply') {
+            steps {
+                git branch: 'accu236', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
+                
+                sh 'mkdir -p temp'
+                sh 'cp -ur accu201/accu230/* temp'
+
+                dir('temp/vpc-module') {
+                    sh "echo 'create VPC'"
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                    sh 'terraform output -json > vars.txt'
+                }
+
+                dir('temp/eks-module') {
+                    sh "echo 'create EKS'"
+                    sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                    sh 'echo "vpc_private_subnets=$(jq .vpc_private_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
+                    sh 'cat vars.tfvars'
+
+                    sh 'terraform init'
+                    sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                    sh "terraform output -json > vars.txt"
+                }
+                
+                dir('temp/rds-module') {
+                    sh "echo 'create RDS'"
+                    sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                    sh 'echo "vpc_public_subnets=$(jq .vpc_public_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
+                    sh "echo 'dump_path=\"../dump.sql\"' >> vars.tfvars"
+                    sh "echo 'mysql_pass=\"${MYSQL_USER_PASS}\"' >> vars.tfvars"
+                    sh "echo 'mysql_login=\"${MYSQL_USER_NAME}\"' >> vars.tfvars"
+                    sh 'cat vars.tfvars'
+
+                    sh 'terraform init'
+                    sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                    sh 'terraform output -json > vars.txt'
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Terraform apply: all fine"'
+                }
+                failure {
+                    sh 'echo "Terraform apply: fail"'
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {        
+                sh "aws s3 cp s3://backup-bucket-for-rds/backup - |\
+                    mysql -h $DB_PRIV_IP -u $MYSQL_USER_NAME --password=\"$MYSQL_USER_PASS\""
+
+                dir('temp/r53-record-module') {
+                    script {
+                        sh 'aws eks --region $(jq -r .region.value ../eks-module/vars.txt) update-kubeconfig \
+                            --name $(jq -r .cluster_name.value ../eks-module/vars.txt)'
+
+                        sh "helm install app ../django-chart-lb --set username=$MYSQL_USER_NAME \
+                            --set password=$MYSQL_USER_PASS --set endpoint=$DB_PRIV_IP"
+
+                        sh "sleep 120"
+
+                        string EKS_ELB_DNS_NAME = sh(returnStdout: true, script: "aws elb describe-load-balancers \
+                            --region eu-central-1 --query 'LoadBalancerDescriptions[*].[DNSName]' \
+                            --output text").trim()
+
+                        string EKS_ELB_ZONE = sh(returnStdout: true, script: "aws elb describe-load-balancers \
+                            --region eu-central-1 --query 'LoadBalancerDescriptions[*].[CanonicalHostedZoneNameID]' \
+                            --output text").trim()
+                                
+                        sh "echo 'create R53-EKS'"
+                        sh "echo 'dns_name=\"${EKS_ELB_DNS_NAME}\"' > vars.tfvars"
+                        sh "echo 'zone_id=\"${EKS_ELB_ZONE}\"' >> vars.tfvars"
+                        sh 'cat vars.tfvars'
+
+                        sh 'terraform init'
+                        sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                        sh "terraform output -json > vars.txt"
+
+                        string LB_DNS_NAME = sh(returnStdout: true, script: "jq .eks_dns_name.value vars.txt").trim()
+
+                        sh "sleep 120"
+                    }    
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Build: all fine"'
+                }
+                failure {
+                    sh 'echo "Build: fail"'
+                }
+            }
+        }
+        
+        stage('Test the setup') {
+            parallel {
+                
+                stage('Test LB server') {
+                    steps {
+                        script {
+                            sh(script: "nmap ${LB_DNS_NAME} -p 80 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+
+                stage('Test DB server') {
+                    steps {
+                        script {
+                            sh(script: "nmap ${DB_DNS_NAME} -p 3306 | grep -o open", returnStdout: true)
+                        }
+                    }
+                }
+
+                stage('Test APP server') {
+                    steps {
+                        script {
+                            if (params.APP_OPTION == "EC2"){
+                                sh(script: "nmap ${APP_DNS_NAME} -p 8000 | grep -o open", returnStdout: true)
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // post {
+            //     failure {
+            //         sh 'echo "Terraform destroy"'
+            //         dir('temp') {
+            //             sh 'terraform destroy -auto-approve'
+            //         }
+            //     }
+            // }
+        }
+
+        stage('Test the application') {
+            parallel {
+
+                stage('Test index.html') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME} \
+                                -o /dev/null", returnStdout: true).trim()
+                                    
+                            if (status != "200") {
+                                error("index.html error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test dbread') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/dbread \
+                                -o /dev/null", returnStdout: true).trim()
+                                    
+                            if (status != "200") {
+                                error("dbread error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test appserver') {
+                    steps {
+                        script {
+                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/appserver \
+                                -o /dev/null", returnStdout: true).trim()
+                                    
+                            if (status != "200") {
+                                error("appserver error")
+                            }
+                        }
+                    }
+                }
+
+                stage('Test serverid') {
+                    steps {
+                        script {
+                            try {
+                                string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/serverid \
+                                    -o /dev/null", returnStdout: true).trim()
+                                        
+                                if (status != "200") {
+                                    error("serverid error")
+                                }
+                            } catch (Exception e) {
+                                echo 'Serverid fail'
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // post {
+            //     failure {
+            //         sh 'echo "Terraform destroy"'
+            //         dir('temp') {
+            //             sh 'terraform destroy -auto-approve'
+            //         }
+            //     }
+            // }
+        }
+
+        stage('Terraform destroy') {
+            steps {
+                script{
+                    
+                    dir('temp/r53-record-module') {
+                        sh "echo 'destroy R53-EKS'"
+                        sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                    }
+                    
+                    dir('temp/rds-module') {
+                        sh "echo 'destroy RDS'"
+                        sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                    }
+                    
+                    dir('temp/eks-module') {
+                        sh "echo 'destroy EKS'"
+                        sh "helm delete app"
+                        sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+                    }
+
+                    dir('temp/vpc-module') {
+                        sh "echo 'destroy VPC'"
+                        sh 'terraform destroy -auto-approve'
+                    }
+
+                    sh 'rm -rf temp'
+                }
+            }
+
+            post {
+                success {
+                    sh 'echo "Terraform destroy: all fine"'
+                }
+                failure {
+                    sh 'echo "Terraform destroy: fail"'
+                }
+            }
+        }
+    }
+}

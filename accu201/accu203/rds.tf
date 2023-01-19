@@ -56,8 +56,7 @@ resource "aws_s3_object" "object" {
 }
 
 resource "aws_db_instance" "default" {
-  identifier              = "mydb1
-  "
+  identifier              = "mydb1"
   allocated_storage       = 20
   engine                  = "mysql"
   engine_version          = "8.0"
