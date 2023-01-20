@@ -62,9 +62,6 @@ pipeline {
         
         stage('Build') {
             steps {        
-                sh "aws s3 cp s3://backup-bucket-for-rds/backup - |\
-                    mysql -h $DB_PRIV_IP -u $MYSQL_USER_NAME --password=\"$MYSQL_USER_PASS\""
-
                 dir('temp/r53-record-module') {
                     script {
                         sh 'aws eks --region $(jq -r .region.value ../eks-module/vars.txt) update-kubeconfig \

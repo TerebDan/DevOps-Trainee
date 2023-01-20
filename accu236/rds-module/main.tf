@@ -32,17 +32,13 @@ resource "aws_security_group" "db_rules" {
 }
 
 resource "aws_db_instance" "default" {
-  identifier              = "mydb1"
-  allocated_storage       = 20
-  engine                  = "mysql"
-  engine_version          = "8.0"
+  identifier              = "my_db"
   instance_class          = "db.t3.micro"
-  username                = var.mysql_login
-  password                = var.mysql_pass
+  snapshot_identifier     = "arn:aws:rds:eu-central-1:195167443138:snapshot:ezspeak-snapshot"
   skip_final_snapshot     = true
   apply_immediately       = true
-  publicly_accessible     = true
-  db_subnet_group_name      = aws_db_subnet_group.default.id
+  publicly_accessible     = false
+  db_subnet_group_name    =   aws_db_subnet_group.default.id
   vpc_security_group_ids  = [ aws_security_group.db_rules.id ]
   
   tags                    = var.my_tags
