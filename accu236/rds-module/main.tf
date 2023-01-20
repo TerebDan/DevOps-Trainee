@@ -5,7 +5,7 @@ provider "aws" {
 resource "aws_db_subnet_group" "default" {
   name        = "rds-subnet-group"
   description = "Terraform RDS subnet group"
-  subnet_ids  = var.vpc_public_subnets
+  subnet_ids  = var.vpc_database_subnets
 
   tags = var.my_tags
 }
@@ -15,8 +15,8 @@ resource "aws_security_group" "db_rules" {
   vpc_id             = var.vpc_id 
 
   ingress {
-    from_port        = 3306
-    to_port          = 3306
+    from_port        = 5432
+    to_port          = 5432
     protocol         = "tcp"
     cidr_blocks      = ["0.0.0.0/0"]
   }
@@ -29,25 +29,6 @@ resource "aws_security_group" "db_rules" {
   }
 
   tags               = var.my_tags
-}
-
-resource "aws_s3_bucket" "b" {
-  bucket = "backup-bucket-for-rds"
-
-  tags   = var.my_tags
-}
-
-resource "aws_s3_bucket_acl" "example" {
-  bucket = aws_s3_bucket.b.id
-  acl    = "private"
-}
-
-resource "aws_s3_object" "object" {
-  bucket = aws_s3_bucket.b.bucket
-  key    = "backup"
-  source = var.dump_path
-
-  tags   = var.my_tags
 }
 
 resource "aws_db_instance" "default" {

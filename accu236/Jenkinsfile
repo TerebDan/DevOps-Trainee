@@ -38,7 +38,7 @@ pipeline {
                 dir('temp/rds-module') {
                     sh "echo 'create RDS'"
                     sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
-                    sh 'echo "vpc_public_subnets=$(jq .vpc_public_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
+                    sh 'echo "vpc_database_subnets=$(jq .vpc_database_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
                     sh "echo 'dump_path=\"../dump.sql\"' >> vars.tfvars"
                     sh "echo 'mysql_pass=\"${MYSQL_USER_PASS}\"' >> vars.tfvars"
                     sh "echo 'mysql_login=\"${MYSQL_USER_NAME}\"' >> vars.tfvars"
