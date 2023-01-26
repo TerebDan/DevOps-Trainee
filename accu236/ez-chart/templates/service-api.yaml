@@ -13,4 +13,3 @@ spec:
       protocol  : TCP
       port      : 4000  # Port on Load Balancer
       targetPort: 4000  # Port on POD
-  type: LoadBalancer

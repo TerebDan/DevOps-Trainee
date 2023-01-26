@@ -13,4 +13,3 @@ spec:
       protocol  : TCP
       port      : 6379  # Port on Load Balancer
       targetPort: 6379  # Port on POD
-  type: LoadBalancer

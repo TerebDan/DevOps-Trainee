@@ -6,8 +6,8 @@ resource "aws_route53_record" "eks_lb_api" {
   type    = "A"
   
   alias {
-    name                   = var.dns_name_api
-    zone_id                = var.zone_id_api
+    name                   = var.dns_name
+    zone_id                = var.zone_id
     evaluate_target_health = true
   }
 
@@ -19,11 +19,19 @@ resource "aws_route53_record" "eks_lb_client" {
   type    = "A"
   
   alias {
-    name                   = var.dns_name_client
-    zone_id                = var.zone_id_client
+    name                   = var.dns_name
+    zone_id                = var.zone_id
     evaluate_target_health = true
   }
 
+}
+
+resource "aws_route53_record" "db" {
+  zone_id = "Z01242703EIVQQ2V4GNJ8"
+  name    = "www.ez.lab.vandergizer.com"
+  type    = "CNAME"
+  ttl     = 300
+  records = [aws_route53_record.eks_lb_client.name]
 }
 
 resource "aws_route53_record" "eks_lb_legal" {
@@ -32,8 +40,8 @@ resource "aws_route53_record" "eks_lb_legal" {
   type    = "A"
   
   alias {
-    name                   = var.dns_name_legal
-    zone_id                = var.zone_id_legal
+    name                   = var.dns_name
+    zone_id                = var.zone_id
     evaluate_target_health = true
   }
 

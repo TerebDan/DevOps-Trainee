@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-hosts
+
+spec:
+  rules:
+  - host: api.lab.vandergizer.com
+    http:
+      paths:
+        - backend:
+           serviceName: {{ .Release.Name }}-api-service
+           servicePort: 4000
+
+  - host: ez.lab.vandergizer.com
+    http:
+      paths:
+        - backend:
+           serviceName: {{ .Release.Name }}-client-service
+           servicePort: 80
+
+  - host: legal.lab.vandergizer.com
+    http:
+      paths:
+        - backend:
+           serviceName: {{ .Release.Name }}-legal-service
+           servicePort: 80

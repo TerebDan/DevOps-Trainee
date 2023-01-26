@@ -64,44 +64,24 @@ pipeline {
                         sh 'aws eks --region $(jq -r .region.value ../eks-module/vars.txt) update-kubeconfig \
                             --name $(jq -r .cluster_name.value ../eks-module/vars.txt)'
 
+                        ИНГРЕСС
+
                         sh "helm install EzSpeak ../ez-chart"
 
                         sh "sleep 120"
 
-                        string EKS_ELB_DNS_NAME_API = sh(returnStdout: true, script: "aws elb describe-load-balancers \
+                        string EKS_ELB_DNS_NAME = sh(returnStdout: true, script: "aws elb describe-load-balancers \
                             --region eu-central-1 --query 'LoadBalancerDescriptions[*].[DNSName]' \
                             --output text").trim()
 
-                        string EKS_ELB_ZONE_API = sh(returnStdout: true, script: "aws elb describe-load-balancers \
-                            --region eu-central-1 --query 'LoadBalancerDescriptions[*].[CanonicalHostedZoneNameID]' \
-                            --output text").trim()
-
-                        string EKS_ELB_DNS_NAME_CLIENT = sh(returnStdout: true, script: "aws elb describe-load-balancers \
-                            --region eu-central-1 --query 'LoadBalancerDescriptions[*].[DNSName]' \
-                            --output text").trim()
-
-                        string EKS_ELB_ZONE_CLIENT = sh(returnStdout: true, script: "aws elb describe-load-balancers \
-                            --region eu-central-1 --query 'LoadBalancerDescriptions[*].[CanonicalHostedZoneNameID]' \
-                            --output text").trim()
-
-                        string EKS_ELB_DNS_NAME_LEGAL = sh(returnStdout: true, script: "aws elb describe-load-balancers \
-                            --region eu-central-1 --query 'LoadBalancerDescriptions[*].[DNSName]' \
-                            --output text").trim()
-
-                        string EKS_ELB_ZONE_LEGAL = sh(returnStdout: true, script: "aws elb describe-load-balancers \
+                        string EKS_ELB_ZONE = sh(returnStdout: true, script: "aws elb describe-load-balancers \
                             --region eu-central-1 --query 'LoadBalancerDescriptions[*].[CanonicalHostedZoneNameID]' \
                             --output text").trim()
                                 
                         sh "echo 'create R53-EKS'"
 
-                        sh "echo 'dns_name_api=\"${EKS_ELB_DNS_NAME_API}\"' > vars.tfvars"
-                        sh "echo 'zone_id_api=\"${EKS_ELB_ZONE_API}\"' >> vars.tfvars"
-
-                        sh "echo 'dns_name_client=\"${EKS_ELB_DNS_NAME_CLIENT}\"' >> vars.tfvars"
-                        sh "echo 'zone_id_client=\"${EKS_ELB_ZONE_CLIENT}\"' >> vars.tfvars"
-
-                        sh "echo 'dns_name_legal=\"${EKS_ELB_DNS_NAME_LEGAL}\"' >> vars.tfvars"
-                        sh "echo 'zone_id_legal=\"${EKS_ELB_ZONE_LEGAL}\"' >> vars.tfvars"
+                        sh "echo 'dns_name_api=\"${EKS_ELB_DNS_NAME}\"' > vars.tfvars"
+                        sh "echo 'zone_id_api=\"${EKS_ELB_ZONE}\"' >> vars.tfvars"
 
                         sh 'cat vars.tfvars'
 
