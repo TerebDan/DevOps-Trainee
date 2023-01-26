@@ -1,0 +1,22 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-legal-deployment
+  labels:
+    app: {{ .Release.Name }}-legal-deployment
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-legal
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-legal
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-legal-app
+        image: {{ .Values.containers.legal-image }}
+        ports:
+        - containerPort: 4200

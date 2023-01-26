@@ -43,3 +43,11 @@ resource "aws_db_instance" "default" {
   
   tags                    = var.my_tags
 }
+
+resource "aws_route53_record" "db" {
+  zone_id = "Z0223947AKG0QPDNWMK4"
+  name    = "db.hero-of-language.com"
+  type    = "CNAME"
+  ttl     = 300
+  records = [aws_db_instance.default.endpoint]
+}

@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  labels:
+    owner: DaniilT
+spec:
+  selector:
+    app: {{ .Release.Name }}-redis  # Selecting PODS with those Labels
+  ports:
+    - name      : {{ .Release.Name }}-redis-listener
+      protocol  : TCP
+      port      : 6379  # Port on Load Balancer
+      targetPort: 6379  # Port on POD
+  type: LoadBalancer
