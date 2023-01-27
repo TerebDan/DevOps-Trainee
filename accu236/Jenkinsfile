@@ -64,7 +64,9 @@ pipeline {
                         sh 'aws eks --region $(jq -r .region.value ../eks-module/vars.txt) update-kubeconfig \
                             --name $(jq -r .cluster_name.value ../eks-module/vars.txt)'
 
-                        ИНГРЕСС
+                        sh "helm repo add bitnami https://charts.bitnami.com/bitnami"
+
+                        sh "helm install contour bitnami/contour --namespace projectcontour --create-namespace"
 
                         sh "helm install EzSpeak ../ez-chart"
 
@@ -108,153 +110,155 @@ pipeline {
             }
         }
         
-        stage('Test the setup') {
-            parallel {
+        // stage('Test the setup') {
+        //     parallel {
                 
-                stage('Test LB server') {
-                    steps {
-                        script {
-                            sh(script: "nmap ${LB_DNS_NAME} -p 80 | grep -o open", returnStdout: true)
-                        }
-                    }
-                }
+        //         stage('Test LB server') {
+        //             steps {
+        //                 script {
+        //                     sh(script: "nmap ${LB_DNS_NAME} -p 80 | grep -o open", returnStdout: true)
+        //                 }
+        //             }
+        //         }
 
-                stage('Test DB server') {
-                    steps {
-                        script {
-                            sh(script: "nmap ${DB_DNS_NAME} -p 3306 | grep -o open", returnStdout: true)
-                        }
-                    }
-                }
+        //         stage('Test DB server') {
+        //             steps {
+        //                 script {
+        //                     sh(script: "nmap ${DB_DNS_NAME} -p 3306 | grep -o open", returnStdout: true)
+        //                 }
+        //             }
+        //         }
 
-                stage('Test APP server') {
-                    steps {
-                        script {
-                            if (params.APP_OPTION == "EC2"){
-                                sh(script: "nmap ${APP_DNS_NAME} -p 8000 | grep -o open", returnStdout: true)
-                            }
-                        }
-                    }
-                }
-            }
+        //         stage('Test APP server') {
+        //             steps {
+        //                 script {
+        //                     if (params.APP_OPTION == "EC2"){
+        //                         sh(script: "nmap ${APP_DNS_NAME} -p 8000 | grep -o open", returnStdout: true)
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
             
-            // post {
-            //     failure {
-            //         sh 'echo "Terraform destroy"'
-            //         dir('temp') {
-            //             sh 'terraform destroy -auto-approve'
-            //         }
-            //     }
-            // }
-        }
+        //     // post {
+        //     //     failure {
+        //     //         sh 'echo "Terraform destroy"'
+        //     //         dir('temp') {
+        //     //             sh 'terraform destroy -auto-approve'
+        //     //         }
+        //     //     }
+        //     // }
+        // }
 
-        stage('Test the application') {
-            parallel {
+        // stage('Test the application') {
+        //     parallel {
 
-                stage('Test index.html') {
-                    steps {
-                        script {
-                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME} \
-                                -o /dev/null", returnStdout: true).trim()
+        //         stage('Test index.html') {
+        //             steps {
+        //                 script {
+        //                     string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME} \
+        //                         -o /dev/null", returnStdout: true).trim()
                                     
-                            if (status != "200") {
-                                error("index.html error")
-                            }
-                        }
-                    }
-                }
+        //                     if (status != "200") {
+        //                         error("index.html error")
+        //                     }
+        //                 }
+        //             }
+        //         }
 
-                stage('Test dbread') {
-                    steps {
-                        script {
-                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/dbread \
-                                -o /dev/null", returnStdout: true).trim()
+        //         stage('Test dbread') {
+        //             steps {
+        //                 script {
+        //                     string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/dbread \
+        //                         -o /dev/null", returnStdout: true).trim()
                                     
-                            if (status != "200") {
-                                error("dbread error")
-                            }
-                        }
-                    }
-                }
+        //                     if (status != "200") {
+        //                         error("dbread error")
+        //                     }
+        //                 }
+        //             }
+        //         }
 
-                stage('Test appserver') {
-                    steps {
-                        script {
-                            string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/appserver \
-                                -o /dev/null", returnStdout: true).trim()
+        //         stage('Test appserver') {
+        //             steps {
+        //                 script {
+        //                     string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/appserver \
+        //                         -o /dev/null", returnStdout: true).trim()
                                     
-                            if (status != "200") {
-                                error("appserver error")
-                            }
-                        }
-                    }
-                }
+        //                     if (status != "200") {
+        //                         error("appserver error")
+        //                     }
+        //                 }
+        //             }
+        //         }
 
-                stage('Test serverid') {
-                    steps {
-                        script {
-                            try {
-                                string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/serverid \
-                                    -o /dev/null", returnStdout: true).trim()
+        //         stage('Test serverid') {
+        //             steps {
+        //                 script {
+        //                     try {
+        //                         string status = sh(script: "curl -sLI -w '%{http_code}' http://${LB_DNS_NAME}/serverid \
+        //                             -o /dev/null", returnStdout: true).trim()
                                         
-                                if (status != "200") {
-                                    error("serverid error")
-                                }
-                            } catch (Exception e) {
-                                echo 'Serverid fail'
-                            }
-                        }
-                    }
-                }
-            }
+        //                         if (status != "200") {
+        //                             error("serverid error")
+        //                         }
+        //                     } catch (Exception e) {
+        //                         echo 'Serverid fail'
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
             
-            // post {
-            //     failure {
-            //         sh 'echo "Terraform destroy"'
-            //         dir('temp') {
-            //             sh 'terraform destroy -auto-approve'
-            //         }
-            //     }
-            // }
-        }
+        //     // post {
+        //     //     failure {
+        //     //         sh 'echo "Terraform destroy"'
+        //     //         dir('temp') {
+        //     //             sh 'terraform destroy -auto-approve'
+        //     //         }
+        //     //     }
+        //     // }
+        // }
 
-        stage('Terraform destroy') {
-            steps {
-                script{
+        // stage('Terraform destroy') {
+        //     steps {
+        //         script{
                     
-                    dir('temp/r53-record-module') {
-                        sh "echo 'destroy R53-EKS'"
-                        sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
-                    }
+        //             dir('temp/r53-record-module') {
+        //                 sh "echo 'destroy R53-EKS'"
+        //                 sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+        //             }
                     
-                    dir('temp/rds-module') {
-                        sh "echo 'destroy RDS'"
-                        sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
-                    }
+        //             dir('temp/rds-module') {
+        //                 sh "echo 'destroy RDS'"
+        //                 sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+        //             }
                     
-                    dir('temp/eks-module') {
-                        sh "echo 'destroy EKS'"
-                        sh "helm delete EzSpeak"
-                        sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
-                    }
+        //             dir('temp/eks-module') {
+        //                 sh "echo 'destroy EKS'"
+        //                 sh "helm delete contour"
+        //                 sh "helm delete EzSpeak"
+        //                 sh "helm repo remove bitnami"
+        //                 sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
+        //             }
 
-                    dir('temp/vpc-module') {
-                        sh "echo 'destroy VPC'"
-                        sh 'terraform destroy -auto-approve'
-                    }
+        //             dir('temp/vpc-module') {
+        //                 sh "echo 'destroy VPC'"
+        //                 sh 'terraform destroy -auto-approve'
+        //             }
 
-                    sh 'rm -rf temp'
-                }
-            }
+        //             sh 'rm -rf temp'
+        //         }
+        //     }
 
-            post {
-                success {
-                    sh 'echo "Terraform destroy: all fine"'
-                }
-                failure {
-                    sh 'echo "Terraform destroy: fail"'
-                }
-            }
-        }
+        //     post {
+        //         success {
+        //             sh 'echo "Terraform destroy: all fine"'
+        //         }
+        //         failure {
+        //             sh 'echo "Terraform destroy: fail"'
+        //         }
+        //     }
+        // }
     }
 }

@@ -1,8 +1,8 @@
 containers:
-  client-image  : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
-  legal-image   : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
-  library-image : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
-  api-image     : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
-  redis-image   : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
+  api-image     : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/api_ez:latest
+  client-image  : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/client_ez:latest
+  legal-image   : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/legal_ez:latest
+  library-image : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/library_ez:latest
+  redis-image   : redis:7.0.5
 
 replicaCount: 1

@@ -5,8 +5,8 @@ type       : application
 version    : 0.1.0
 
 keywords:
-  - django
-  - k8s secrets
+  - Ruby
+  - EzSpeak
 
 maintainers:
   - owner : DaniilT
