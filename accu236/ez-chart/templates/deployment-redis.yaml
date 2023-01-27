@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: {{ .Release.Name }}-redis-app
-        image: {{ .Values.containers.redis-image }}
+        image: {{ .Values.containers.redis }}
         ports:
         - containerPort: 6379

@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: {{ .Release.Name }}-client-app
-        image: {{ .Values.containers.client-image }}
+        image: {{ .Values.containers.client }}
         ports:
         - containerPort: 4200

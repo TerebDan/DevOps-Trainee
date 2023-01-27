@@ -67,14 +67,14 @@ pipeline {
                             sh 'terraform output -json > vars.txt'
                         }
                     }
-                }
 
-                post {
-                    success {
-                        sh 'echo "RDS: all fine"'
-                    }
-                    failure {
-                        sh 'echo "RDS: fail"'
+                    post {
+                        success {
+                            sh 'echo "RDS: all fine"'
+                        }
+                        failure {
+                            sh 'echo "RDS: fail"'
+                        }
                     }
                 }
 
@@ -91,14 +91,14 @@ pipeline {
                             sh "terraform output -json > vars.txt"
                         }
                     }
-                }
 
-                post {
-                    success {
-                        sh 'echo "EKS: all fine"'
-                    }
-                    failure {
-                        sh 'echo "EKS: fail"'
+                     post {
+                        success {
+                            sh 'echo "EKS: all fine"'
+                        }
+                        failure {
+                            sh 'echo "EKS: fail"'
+                        }
                     }
                 }
             }
@@ -115,7 +115,7 @@ pipeline {
 
                         sh "helm install contour bitnami/contour --namespace projectcontour --create-namespace"
 
-                        sh "helm install EzSpeak ../ez-chart"
+                        sh "helm install ezspeak ../ez-chart"
 
                         sh "sleep 120"
 
@@ -284,7 +284,7 @@ pipeline {
         //             dir('temp/eks-module') {
         //                 sh "echo 'destroy EKS'"
         //                 sh "helm delete contour"
-        //                 sh "helm delete EzSpeak"
+        //                 sh "helm delete ezspeak"
         //                 sh "helm repo remove bitnami"
         //                 sh "terraform destroy -auto-approve -var-file=\"vars.tfvars\""
         //             }

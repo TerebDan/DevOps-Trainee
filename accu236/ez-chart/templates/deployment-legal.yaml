@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: {{ .Release.Name }}-legal-app
-        image: {{ .Values.containers.legal-image }}
+        image: {{ .Values.containers.legal }}
         ports:
         - containerPort: 4200

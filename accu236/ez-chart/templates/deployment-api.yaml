@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: {{ .Release.Name }}-api-app
-        image: {{ .Values.containers.api-image }}
+        image: {{ .Values.containers.api }}
         ports:
         - containerPort: 4000

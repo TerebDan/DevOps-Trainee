@@ -1,8 +1,8 @@
 containers:
-  api-image     : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/api_ez:latest
-  client-image  : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/client_ez:latest
-  legal-image   : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/legal_ez:latest
-  library-image : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/library_ez:latest
-  redis-image   : redis:7.0.5
+  api     : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/api_ez:latest
+  client  : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/client_ez:latest
+  legal   : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/legal_ez:latest
+  library : 195167443138.dkr.ecr.eu-central-1.amazonaws.com/library_ez:latest
+  redis   : redis:7.0.5
 
 replicaCount: 1
