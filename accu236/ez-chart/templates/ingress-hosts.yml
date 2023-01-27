@@ -8,20 +8,32 @@ spec:
   - host: api.lab.vandergizer.com
     http:
       paths:
-        - backend:
-           serviceName: {{ .Release.Name }}-api-service
-           servicePort: 4000
+        - path: /
+          pathType: Prefix
+          backend:
+           service:
+            name: {{ .Release.Name }}-api-service
+            port:
+              number: 4000
 
   - host: ez.lab.vandergizer.com
     http:
       paths:
-        - backend:
-           serviceName: {{ .Release.Name }}-client-service
-           servicePort: 80
+        - path: /
+          pathType: Prefix
+          backend:
+           service:
+            name: {{ .Release.Name }}-client-service
+            port:
+              number: 80
 
   - host: legal.lab.vandergizer.com
     http:
       paths:
-        - backend:
-           serviceName: {{ .Release.Name }}-legal-service
-           servicePort: 80
+        - path: /
+          pathType: Prefix
+          backend:
+           service:
+            name: {{ .Release.Name }}-legal-service
+            port:
+              number: 80
