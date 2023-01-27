@@ -4,18 +4,34 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('aws_key_id')
         AWS_SECRET_ACCESS_KEY = credentials('aws_secret_key_id')
         AWS_REGION = credentials('aws_region')
-        MYSQL_ROOT_PASS = credentials('mysql_root_password')
-        MYSQL_DB_NAME = credentials('new_mysql_db_name')
-        MYSQL_USER_NAME = credentials('new_mysql_user_name')
-        MYSQL_USER_PASS = credentials('new_mysql_user_pass')
     }
     stages {
         stage('Terraform apply') {
             steps {
                 git branch: 'accu236', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
                 
+                script {
+                    properties([
+                        parameters([
+                            choice(
+                                choices: ['true', 'false'], 
+                                description: 'Select true to remove temp dir', 
+                                name: 'REMOVE_TEMP'
+                            )
+                        ])
+                    ])
+
+                    if (params.REMOVE_TEMP == "true") {
+                        try {
+                            sh 'rm -rf temp'
+                        } catch (Exception e) {
+                            echo 'temp directory does not exist'
+                        }
+                    }
+                }
+
                 sh 'mkdir -p temp'
-                sh 'cp -ur accu201/accu230/* temp'
+                sh 'cp -ur accu236/* temp'
 
                 dir('temp/vpc-module') {
                     sh "echo 'create VPC'"
