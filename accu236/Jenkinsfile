@@ -6,7 +6,7 @@ pipeline {
         AWS_REGION = credentials('aws_region')
     }
     stages {
-        stage('Terraform apply') {
+        stage('Initial and VPC') {
             steps {
                 git branch: 'accu236', credentialsId: 'ssh_key_jenkins', url: 'git@github.com:TerebDan/DevOps-Trainee.git'
                 
@@ -39,36 +39,67 @@ pipeline {
                     sh 'terraform apply -auto-approve'
                     sh 'terraform output -json > vars.txt'
                 }
-
-                dir('temp/eks-module') {
-                    sh "echo 'create EKS'"
-                    sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
-                    sh 'echo "vpc_private_subnets=$(jq .vpc_private_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
-                    sh 'cat vars.tfvars'
-
-                    sh 'terraform init'
-                    sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
-                    sh "terraform output -json > vars.txt"
-                }
-                
-                dir('temp/rds-module') {
-                    sh "echo 'create RDS'"
-                    sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
-                    sh 'echo "vpc_database_subnets=$(jq .vpc_database_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
-                    sh 'cat vars.tfvars'
-
-                    sh 'terraform init'
-                    sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
-                    sh 'terraform output -json > vars.txt'
-                }
             }
 
             post {
                 success {
-                    sh 'echo "Terraform apply: all fine"'
+                    sh 'echo "Initial and VPC: all fine"'
                 }
                 failure {
-                    sh 'echo "Terraform apply: fail"'
+                    sh 'echo "Initial and VPC: fail"'
+                }
+            }
+        }
+
+        stage('RDS and EKS') {
+            parallel {
+
+                stage('RDS') {
+                    steps {
+                        dir('temp/rds-module') {
+                            sh "echo 'create RDS'"
+                            sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                            sh 'echo "vpc_database_subnets=$(jq .vpc_database_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
+                            sh 'cat vars.tfvars'
+
+                            sh 'terraform init'
+                            sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                            sh 'terraform output -json > vars.txt'
+                        }
+                    }
+                }
+
+                post {
+                    success {
+                        sh 'echo "RDS: all fine"'
+                    }
+                    failure {
+                        sh 'echo "RDS: fail"'
+                    }
+                }
+
+                stage('EKS') {
+                    steps {
+                        dir('temp/eks-module') {
+                            sh "echo 'create EKS'"
+                            sh 'echo "vpc_id=$(jq .vpc_id.value ../vpc-module/vars.txt)" > vars.tfvars'
+                            sh 'echo "vpc_private_subnets=$(jq .vpc_private_subnets.value ../vpc-module/vars.txt)" >> vars.tfvars'
+                            sh 'cat vars.tfvars'
+
+                            sh 'terraform init'
+                            sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
+                            sh "terraform output -json > vars.txt"
+                        }
+                    }
+                }
+
+                post {
+                    success {
+                        sh 'echo "EKS: all fine"'
+                    }
+                    failure {
+                        sh 'echo "EKS: fail"'
+                    }
                 }
             }
         }

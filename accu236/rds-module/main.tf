@@ -32,7 +32,7 @@ resource "aws_security_group" "db_rules" {
 }
 
 resource "aws_db_instance" "default" {
-  identifier              = "my_db"
+  identifier              = "my-db"
   instance_class          = "db.t3.micro"
   snapshot_identifier     = "arn:aws:rds:eu-central-1:195167443138:snapshot:ezspeak-snapshot"
   skip_final_snapshot     = true
