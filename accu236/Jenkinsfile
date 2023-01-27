@@ -129,8 +129,8 @@ pipeline {
                                 
                         sh "echo 'create R53-EKS'"
 
-                        sh "echo 'dns_name_api=\"${EKS_ELB_DNS_NAME}\"' > vars.tfvars"
-                        sh "echo 'zone_id_api=\"${EKS_ELB_ZONE}\"' >> vars.tfvars"
+                        sh "echo 'dns_name=\"${EKS_ELB_DNS_NAME}\"' > vars.tfvars"
+                        sh "echo 'zone_id=\"${EKS_ELB_ZONE}\"' >> vars.tfvars"
 
                         sh 'cat vars.tfvars'
 
