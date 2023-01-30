@@ -113,7 +113,7 @@ pipeline {
 
                         sh "helm repo add bitnami https://charts.bitnami.com/bitnami"
 
-                        sh "helm install contour bitnami/contour --namespace projectcontour --create-namespace"
+                        sh "helm install contour bitnami/contour"
 
                         sh "helm install ezspeak ../ez-chart"
 
