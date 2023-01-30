@@ -43,11 +43,3 @@ resource "aws_db_instance" "default" {
   
   tags                    = var.my_tags
 }
-
-resource "aws_route53_record" "db" {
-  zone_id = "Z01242703EIVQQ2V4GNJ8"
-  name    = "db.lab.vandergizer.com"
-  type    = "CNAME"
-  ttl     = 300
-  records = [aws_db_instance.default.endpoint]
-}

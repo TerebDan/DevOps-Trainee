@@ -65,6 +65,8 @@ pipeline {
                             sh 'terraform init'
                             sh "terraform apply -auto-approve -var-file=\"vars.tfvars\""
                             sh 'terraform output -json > vars.txt'
+                            sh 'echo "\ndatabase: $(jq .db_private_ip.value ./vars.txt)" >> ../ez-chart/values.yaml'
+                            sh 'cat ../ez-chart/values.yaml'
                         }
                     }
 
